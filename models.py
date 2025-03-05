@@ -11,6 +11,8 @@ class Enseignant(db.Model):
     Matricule_EN = db.Column(db.String(20), unique=True, nullable=False)
     Email_EN = db.Column(db.String(100), unique=True, nullable=False)
     Mot_de_Passe = db.Column(db.String(255), nullable=False)
+    otp_token = db.Column(db.String(6), nullable=True)
+    verified = db.Column(db.Boolean, default=False)
 
 class EmploiDuTemps(db.Model):
     ID_EMP = db.Column(db.Integer, primary_key=True, autoincrement=True)
