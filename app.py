@@ -4,9 +4,11 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail, Message
+from sqlalchemy import create_engine
+from sqlalchemy_utils import database_exists, create_database
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:@localhost/kalam'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:@localhost/assistprof'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = 'your_secret_key'
 db = SQLAlchemy(app)
@@ -41,9 +43,6 @@ class EmploiDuTemps(db.Model):
     Groupe = db.Column(db.String(20), nullable=False)
     ID_EN = db.Column(db.Integer, db.ForeignKey('enseignant.ID_EN'), nullable=True)
 
-with app.app_context():
-    db.create_all()
-
 def generate_otp():
     return random.randint(100000, 999999)
 
@@ -54,66 +53,55 @@ def inscription():
         prenom = request.form['prenom']
         matricule = request.form['matricule']
         email = request.form['email']
-        password = request.form['password']
-        hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+        password = generate_password_hash(request.form['password'])
 
-        otp = generate_otp()
+        # Generate OTP and store registration data in session
+        otp = str(random.randint(100000, 999999))
+        session['registration_data'] = {
+            'nom': nom,
+            'prenom': prenom,
+            'matricule': matricule,
+            'email': email,
+            'password': password
+        }
         session['otp'] = otp
-        session['nom'] = nom
-        session['prenom'] = prenom
-        session['matricule'] = matricule
-        session['email'] = email
-        session['hashed_password'] = hashed_password
 
-        msg = Message('Your OTP Code', sender='assistprof.djib@gmail.com', recipients=[email])
-        msg.body = f'Your OTP code is {otp}'
+        # Send OTP to user's email
+        msg = Message('OTP Verification', sender=app.config['MAIL_USERNAME'], recipients=[email])
+        msg.body = f'Your OTP is: {otp}'
         mail.send(msg)
 
-        new_enseignant = Enseignant(
-            Nom_EN=nom,
-            Prenom_EN=prenom,
-            Matricule_EN=matricule,
-            Email_EN=email,
-            Mot_de_Passe=hashed_password,
-            otp_token=str(otp),
-            verified=False
-        )
-        try:
-            db.session.add(new_enseignant)
-            db.session.commit()
-            flash('Inscription réussie! Please verify your OTP.', 'success')
-            return redirect(url_for('verify_otp'))
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Erreur lors de l\'inscription: {str(e)}', 'danger')
-
+        return redirect(url_for('verify_otp'))
     return render_template('inscription.html')
 
 @app.route('/verify_otp', methods=['GET', 'POST'])
 def verify_otp():
+    # Redirect if no registration data present
+    if 'registration_data' not in session or 'otp' not in session:
+        return redirect(url_for('inscription'))
+    error = None
     if request.method == 'POST':
-        otp = request.form['otp']
-        email = session.get('email')
-        enseignant = Enseignant.query.filter_by(Email_EN=email).first()
-        if enseignant and enseignant.otp_token == otp:
-            enseignant.verified = True
-            enseignant.otp_token = None
-            try:
-                db.session.commit()
-                session.pop('otp', None)
-                session.pop('nom', None)
-                session.pop('prenom', None)
-                session.pop('matricule', None)
-                session.pop('email', None)
-                session.pop('hashed_password', None)
-                flash('OTP verified successfully!', 'success')
-                return redirect(url_for('connexion'))
-            except Exception as e:
-                db.session.rollback()
-                flash(f'Erreur lors de la vérification de l\'OTP: {str(e)}', 'danger')
+        if request.form['otp'] == session['otp']:
+            data = session['registration_data']
+            # Create the user in the database
+            new_enseignant = Enseignant(
+                Nom_EN=data['nom'],
+                Prenom_EN=data['prenom'],
+                Matricule_EN=data['matricule'],
+                Email_EN=data['email'],
+                Mot_de_Passe=data['password'],
+                verified=True
+            )
+            db.session.add(new_enseignant)
+            db.session.commit()
+            # Clear registration data from session
+            session.pop('registration_data', None)
+            session.pop('otp', None)
+            flash('OTP verified successfully!', 'success')
+            return redirect(url_for('connexion'))
         else:
-            flash('Invalid OTP', 'danger')
-    return render_template('verify_otp.html')
+            error = 'Invalid OTP'
+    return render_template('verify_otp.html', error=error)
 
 @app.route('/connexion', methods=['GET', 'POST'])
 def connexion():
@@ -156,4 +144,9 @@ def index():
     return redirect(url_for('connexion'))
 
 if __name__ == '__main__':
+    engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'])
+    if not database_exists(engine.url):
+        create_database(engine.url)
+    with app.app_context():
+        db.create_all()
     app.run(debug=True)
