@@ -13,13 +13,13 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = 'your_secret_key'
 db = SQLAlchemy(app)
 
-# Configure Flask-Mail for Gmail
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'  # Gmail SMTP server
-app.config['MAIL_PORT'] = 587  # Port for TLS
-app.config['MAIL_USERNAME'] = 'assistprof.djib@gmail.com'  # Replace with your Gmail address
-app.config['MAIL_PASSWORD'] = 'jgfx ryzu muvn wbjj'  # Replace with your app password (not your Gmail password)
-app.config['MAIL_USE_TLS'] = True  # Use TLS
-app.config['MAIL_USE_SSL'] = False  # Don't use SSL
+# Configurer Flask-Mail pour Gmail
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'  # Serveur SMTP de Gmail
+app.config['MAIL_PORT'] = 587  # Port pour TLS
+app.config['MAIL_USERNAME'] = 'assistprof.djib@gmail.com'  # Remplacez par votre adresse Gmail
+app.config['MAIL_PASSWORD'] = 'jgfx ryzu muvn wbjj'  # Remplacez par votre mot de passe d'application (pas votre mot de passe Gmail)
+app.config['MAIL_USE_TLS'] = True  # Utiliser TLS
+app.config['MAIL_USE_SSL'] = False  # Ne pas utiliser SSL
 mail = Mail(app)
 
 class Enseignant(db.Model):
@@ -55,7 +55,7 @@ def inscription():
         email = request.form['email']
         password = generate_password_hash(request.form['password'])
 
-        # Generate OTP and store registration data in session
+        # Générer OTP et stocker les données d'inscription dans la session
         otp = str(random.randint(100000, 999999))
         session['registration_data'] = {
             'nom': nom,
@@ -66,7 +66,7 @@ def inscription():
         }
         session['otp'] = otp
 
-        # Send OTP to user's email
+        # Envoyer OTP à l'email de l'utilisateur
         msg = Message('OTP Verification', sender=app.config['MAIL_USERNAME'], recipients=[email])
         msg.body = f'Your OTP is: {otp}'
         mail.send(msg)
@@ -76,14 +76,14 @@ def inscription():
 
 @app.route('/verify_otp', methods=['GET', 'POST'])
 def verify_otp():
-    # Redirect if no registration data present
+    # Rediriger si aucune donnée d'inscription présente
     if 'registration_data' not in session or 'otp' not in session:
         return redirect(url_for('inscription'))
     error = None
     if request.method == 'POST':
         if request.form['otp'] == session['otp']:
             data = session['registration_data']
-            # Create the user in the database
+            # Créer l'utilisateur dans la base de données
             new_enseignant = Enseignant(
                 Nom_EN=data['nom'],
                 Prenom_EN=data['prenom'],
@@ -94,13 +94,13 @@ def verify_otp():
             )
             db.session.add(new_enseignant)
             db.session.commit()
-            # Clear registration data from session
+            # Effacer les données d'inscription de la session
             session.pop('registration_data', None)
             session.pop('otp', None)
-            flash('OTP verified successfully!', 'success')
+            flash('OTP vérifié avec succès!', 'success')
             return redirect(url_for('dashboard'))
         else:
-            error = 'Invalid OTP'
+            error = 'OTP invalide'
     return render_template('verify_otp.html', error=error)
 
 @app.route('/connexion', methods=['GET', 'POST'])
@@ -115,7 +115,7 @@ def connexion():
                 session['user_name'] = enseignant.Nom_EN
                 return redirect(url_for('dashboard'))
             else:
-                flash('Please verify your email before logging in.', 'warning')
+                flash('Veuillez vérifier votre email avant de vous connecter.', 'warning')
         else:
             flash('Email ou mot de passe incorrect', 'danger')
     return render_template('connexion.html')

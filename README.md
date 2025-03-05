@@ -53,8 +53,8 @@ Le développement suit une approche rigoureuse basée sur le **génie logiciel**
 1. **Cloner le dépôt :**
    ```bash
    
-   git clone [https://github.com/votre-utilisateur/mashru3](https://github.com/haki24gamer/Mashru3).git
-   cd Mashru3
+   git clone https://github.com/DrPower01/AssistProf.git
+   cd AssistProf
 
 2. **Créer un environnement virtuel :**
    ```bash
@@ -71,7 +71,7 @@ Le développement suit une approche rigoureuse basée sur le **génie logiciel**
 4. **Configurer la base de données :**
    ```sql
    
-     CREATE DATABASE mashru3 CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+     CREATE DATABASE assistprof CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 
 5. **Appliquer les migrations de la base de données :**
    ```bash
