@@ -6,7 +6,7 @@ from flask_mail import Mail
 from email.message import EmailMessage
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:@localhost/kalam'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:@localhost/assistprof'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = 'your_secret_key'
 
