@@ -1,1 +1,4 @@
 Flask==2.0.1
+Flask-SQLAlchemy==2.5.1
+Flask-Mail==0.9.1
+sqlalchemy-utils==0.37.8
