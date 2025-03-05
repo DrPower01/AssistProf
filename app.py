@@ -98,7 +98,7 @@ def verify_otp():
             session.pop('registration_data', None)
             session.pop('otp', None)
             flash('OTP verified successfully!', 'success')
-            return redirect(url_for('connexion'))
+            return redirect(url_for('dashboard'))
         else:
             error = 'Invalid OTP'
     return render_template('verify_otp.html', error=error)
