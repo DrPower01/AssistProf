@@ -1,4 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import create_engine
+from sqlalchemy_utils import database_exists, create_database
 
 db = SQLAlchemy()
 
@@ -22,6 +24,9 @@ class EmploiDuTemps(db.Model):
     ID_EN = db.Column(db.Integer, db.ForeignKey('enseignant.ID_EN'), nullable=True)
 
 def init_db(app):
+    engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'])
+    if not database_exists(engine.url):
+        create_database(engine.url)
     db.init_app(app)
     with app.app_context():
         db.create_all()
