@@ -1,35 +1,14 @@
 from flask import Flask, render_template, redirect, url_for, request, flash, session
-from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+from models import db, Enseignant, EmploiDuTemps, init_db
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:@localhost/kalam'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = 'your_secret_key'
-db = SQLAlchemy(app)
 
-class Enseignant(db.Model):
-    ID_EN = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    Nom_EN = db.Column(db.String(50), nullable=False)
-    Prenom_EN = db.Column(db.String(50), nullable=False)
-    Matricule_EN = db.Column(db.String(20), unique=True, nullable=False)
-    Email_EN = db.Column(db.String(100), unique=True, nullable=False)
-    Mot_de_Passe = db.Column(db.String(255), nullable=False)
-
-class EmploiDuTemps(db.Model):
-    ID_EMP = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    Jour = db.Column(db.String(20), nullable=False)
-    Heure_debut = db.Column(db.Time, nullable=False)
-    Heure_fin = db.Column(db.Time, nullable=False)
-    Salle = db.Column(db.String(50), nullable=False)
-    Fillier = db.Column(db.String(50), nullable=False)
-    Type_Cour = db.Column(db.String(20), nullable=False)
-    Groupe = db.Column(db.String(20), nullable=False)
-    ID_EN = db.Column(db.Integer, db.ForeignKey('enseignant.ID_EN'), nullable=True)
-
-with app.app_context():
-    db.create_all()
+init_db(app)
 
 @app.route('/inscription', methods=['GET', 'POST'])
 def inscription():
