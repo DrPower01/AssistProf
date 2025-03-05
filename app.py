@@ -2,6 +2,8 @@ from flask import Flask, render_template, redirect, url_for, request, flash, ses
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from models import db, Enseignant, EmploiDuTemps, init_db
+from flask_mail import Mail
+from email.message import EmailMessage
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:@localhost/kalam'
@@ -9,6 +11,15 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = 'your_secret_key'
 
 init_db(app)
+
+# Configure Flask-Mail for Gmail
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'  # Gmail SMTP server
+app.config['MAIL_PORT'] = 587  # Port for TLS
+app.config['MAIL_USERNAME'] = 'assistprof.djib@gmail.com'  # Replace with your Gmail address
+app.config['MAIL_PASSWORD'] = 'jgfx ryzu muvn wbjj '  # Replace with your app password (not your Gmail password)
+app.config['MAIL_USE_TLS'] = True  # Use TLS
+app.config['MAIL_USE_SSL'] = False  # Don't use SSL
+mail = Mail(app)
 
 @app.route('/inscription', methods=['GET', 'POST'])
 def inscription():
