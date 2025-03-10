@@ -4,7 +4,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail, Message
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text  # Import text
 from sqlalchemy_utils import database_exists, create_database
 
 app = Flask(__name__)
@@ -17,7 +17,7 @@ db = SQLAlchemy(app)
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'  # Serveur SMTP de Gmail
 app.config['MAIL_PORT'] = 587  # Port pour TLS
 app.config['MAIL_USERNAME'] = 'assistprof.djib@gmail.com'  # Remplacez par votre adresse Gmail
-app.config['MAIL_PASSWORD'] = 'jgfx ryzu muvn wbjj'  # Remplacez par votre mot de passe d'application (pas votre mot de passe Gmail)
+app.config['MAIL_PASSWORD'] = 'jgfx ryzu muvn wbjj '  # Remplacez par votre mot de passe d'application (pas votre mot de passe Gmail)
 app.config['MAIL_USE_TLS'] = True  # Utiliser TLS
 app.config['MAIL_USE_SSL'] = False  # Ne pas utiliser SSL
 mail = Mail(app)
@@ -123,7 +123,8 @@ def connexion():
 @app.route('/dashboard')
 def dashboard():
     if 'user_name' in session:
-        return render_template('dashboard.html', user_name=session['user_name'])
+        user_id = session['user_id']
+        return render_template('dashboard.html', user_name=session['user_name'], user_id=user_id)
     else:
         return redirect(url_for('connexion'))
 
@@ -143,10 +144,29 @@ def logout():
 def index():
     return redirect(url_for('connexion'))
 
+@app.route('/overview')
+def overview():
+    return render_template('overview.html')
+
+@app.route('/notes')
+def notes():
+    return render_template('notes.html')
+
+@app.route('/documents')
+def documents():
+    return render_template('documents.html')
+
+@app.route('/admin')
+def admin():
+    return render_template('admin.html')
+
 if __name__ == '__main__':
     engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'])
-    if not database_exists(engine.url):
-        create_database(engine.url)
+    # Create the database if it doesn't exist
+    with engine.connect() as conn:
+        conn.execute(text("CREATE DATABASE IF NOT EXISTS assistprof"))
+    # Reflect the new database URI
+    engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'])
     with app.app_context():
         db.create_all()
     app.run(debug=True)

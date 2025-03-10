@@ -1,11 +1,43 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard{% endblock %}
+{% block title %}{% endblock %}
 
 {% block content %}
-<div class="d-flex align-items-center justify-content-center h-100">
-    <div class="w-100 px-3 px-md-0" style="max-width: 600px;">
-        <h1 class="text-left font-weight-bold mb-4 custom-heading">Bienvenue, {{ user_name }}!</h1>
+<div class="container">
+    <nav>
+        <ul class="nav nav-tabs" style="list-style-type: none; display: flex; padding: 0;">
+            <li class="nav-item" style="margin-right: 10px;">
+                <a class="nav-link active" href="#overview" data-toggle="tab">Aperçu</a>
+            </li>
+            <li class="nav-item" style="margin-right: 10px;">
+                <a class="nav-link" href="#notes" data-toggle="tab">Notes</a>
+            </li>
+            <li class="nav-item" style="margin-right: 10px;">
+                <a class="nav-link" href="#documents" data-toggle="tab">Documents</a>
+            </li>
+            <li class="nav-item" style="margin-right: 10px;">
+                <a class="nav-link" href="#admin" data-toggle="tab">Admin</a>
+            </li>
+            <li class="nav-item more-menu" style="margin-right: 10px;">•••</li>
+        </ul>
+    </nav>
+    
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="overview">
+            {% block overview_content %}{% endblock %}
+        </div>
+        <div class="tab-pane fade" id="notes">
+            {% block notes_content %}{% endblock %}
+        </div>
+        <div class="tab-pane fade" id="documents">
+            {% block documents_content %}{% endblock %}
+        </div>
+        <div class="tab-pane fade" id="admin">
+            {% block admin_content %}
+            <h2>Admin Content</h2>
+            <p>This is the admin page content.</p>
+            {% endblock %}
+        </div>
     </div>
 </div>
 {% endblock %}
