@@ -156,8 +156,15 @@ def documents():
 
 @app.route('/admin')
 def admin():
+    if 'user_id' not in session:
+        return redirect(url_for('connexion'))
+    
+    # Get the current user data
+    user_id = session['user_id']
+    current_user = Enseignant.query.get(user_id)
+    
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return render_template('tab_contents/admin.html')
+        return render_template('tab_contents/admin.html', current_user=current_user)
     return redirect(url_for('dashboard'))
 
 @app.route('/schedule')
