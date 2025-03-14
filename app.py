@@ -134,6 +134,32 @@ def dashboard():
     else:
         return redirect(url_for('connexion'))
 
+@app.route('/overview')
+def overview():
+    # If it's an AJAX request, return only the content for the tab
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return render_template('tab_contents/overview.html')
+    # Otherwise redirect to dashboard with overview tab active
+    return redirect(url_for('dashboard'))
+
+@app.route('/notes')
+def notes():
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return render_template('tab_contents/notes.html')
+    return redirect(url_for('dashboard'))
+
+@app.route('/documents')
+def documents():
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return render_template('tab_contents/documents.html')
+    return redirect(url_for('dashboard'))
+
+@app.route('/admin')
+def admin():
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return render_template('tab_contents/admin.html')
+    return redirect(url_for('dashboard'))
+
 @app.route('/schedule')
 def schedule():
     if 'user_name' in session:
@@ -149,22 +175,6 @@ def logout():
 @app.route('/')
 def index():
     return redirect(url_for('connexion'))
-
-@app.route('/overview')
-def overview():
-    return render_template('overview.html')
-
-@app.route('/notes')
-def notes():
-    return render_template('notes.html')
-
-@app.route('/documents')
-def documents():
-    return render_template('documents.html')
-
-@app.route('/admin')
-def admin():
-    return render_template('admin.html')
 
 if __name__ == '__main__':
     engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'])

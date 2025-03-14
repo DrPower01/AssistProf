@@ -1,0 +1,26 @@
+<div class="alert alert-info">
+    <i class="bi bi-info-circle me-2"></i>Bienvenue sur votre tableau de bord. Consultez vos informations et gérez vos activités.
+</div>
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Emploi du temps</h5>
+                <p class="card-text">Consultez votre emploi du temps pour la semaine en cours.</p>
+                <a href="{{ url_for('schedule') }}" class="btn btn-primary">Voir l'emploi du temps</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Activités récentes</h5>
+                <p class="card-text">Vos dernières activités sur la plateforme.</p>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">Connexion - Aujourd'hui</li>
+                    <li class="list-group-item">Modification de cours - Hier</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,71 @@
+<h3 class="card-title">Mes notes</h3>
+<p class="mb-4">Gérez vos notes et vos rappels ici.</p>
+
+<div class="mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5>Nouvelle note</h5>
+        <button class="btn btn-sm btn-primary">
+            <i class="bi bi-plus-lg me-1"></i> Ajouter
+        </button>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control" id="noteTitle" placeholder="Titre">
+                <label for="noteTitle">Titre</label>
+            </div>
+            <div class="form-floating mb-3">
+                <textarea class="form-control" id="noteContent" style="height: 100px" placeholder="Contenu de la note"></textarea>
+                <label for="noteContent">Contenu de la note</label>
+            </div>
+            <div class="text-end">
+                <button class="btn btn-success">
+                    <i class="bi bi-save me-1"></i> Enregistrer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">Réunion pédagogique</h6>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-link text-dark dropdown-toggle" type="button" id="dropdownMenuButton1" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-three-dots-vertical"></i>
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-pencil me-2"></i>Modifier</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-trash me-2"></i>Supprimer</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Préparer les documents pour la réunion pédagogique du département.</p>
+                <small class="text-muted">Créée le 10/06/2023</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">Correction des examens</h6>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-link text-dark dropdown-toggle" type="button" id="dropdownMenuButton2" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-three-dots-vertical"></i>
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton2">
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-pencil me-2"></i>Modifier</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-trash me-2"></i>Supprimer</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Terminer la correction des examens pour le module de programmation.</p>
+                <small class="text-muted">Créée le 05/06/2023</small>
+            </div>
+        </div>
+    </div>
+</div>
