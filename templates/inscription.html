@@ -6,41 +6,113 @@
     <title>Inscription</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Flex:wght@400;700&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Flex:wght@400;500;700&display=swap">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <style>
+        :root {
+            --blue: #4361ee;
+            --indigo: #3a56d4;
+        }
+        
+        body {
+            font-family: 'Roboto Flex', sans-serif;
+            background-color: #f8f9fa;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 0.5rem;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+        
+        .form-control {
+            padding: 0.75rem 1rem;
+        }
+        
+        .form-control:focus {
+            border-color: var(--blue);
+            box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.25);
+        }
+        
+        .heading-underline:after {
+            content: '';
+            display: block;
+            width: 60px;
+            height: 3px;
+            background-color: var(--blue);
+            margin-top: 0.5rem;
+        }
+        
+        .btn-primary {
+            background-color: var(--blue);
+            border-color: var(--blue);
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--indigo);
+            border-color: var(--indigo);
+            transform: translateY(-2px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+        
+        .fade-in {
+            animation: fadeInAnimation 0.5s ease forwards;
+        }
+        
+        @keyframes fadeInAnimation {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
 </head>
 <body>
-    <div class="container-fluid vh-100 d-flex justify-content-center align-items-center">
-        <div class="row w-100">
-            <div class="col-md-6 d-flex align-items-center justify-content-center order-1 order-md-1">
-                <img src="{{ url_for('static', filename='images/Logo-UD.svg') }}" alt="Image" class="img-fluid">
-            </div>
-            <div class="col-md-6 d-flex align-items-center justify-content-center order-2 order-md-2">
-                <div class="w-100 px-3 px-md-0" style="max-width: 600px;">
-                    <h1 class="text-left font-weight-bold mb-4 custom-heading">Inscription</h1>
-                    <form action="/inscription" method="post">
-                        <div class="form-group">
-                            <label for="nom">Nom</label>
-                            <input type="text" class="form-control" id="nom" name="nom" placeholder="Nom" required>
+    <div class="container-fluid min-vh-100 d-flex justify-content-center align-items-center py-4">
+        <div class="row w-100 justify-content-center">
+            <div class="col-xl-10">
+                <div class="card overflow-hidden">
+                    <div class="row no-gutters">
+                        <div class="col-md-6 bg-light d-flex align-items-center justify-content-center p-4 p-md-5">
+                            <img src="{{ url_for('static', filename='images/Logo-UD.svg') }}" alt="Logo" class="img-fluid" style="max-width: 85%;">
                         </div>
-                        <div class="form-group">
-                            <label for="prenom">Prénom</label>
-                            <input type="text" class="form-control" id="prenom" name="prenom" placeholder="Prénom" required>
+                        <div class="col-md-6">
+                            <div class="card-body p-4 p-md-5">
+                                <h1 class="font-weight-bold text-primary mb-4 heading-underline">Inscription</h1>
+                                <form action="/inscription" method="post">
+                                    <div class="form-group fade-in">
+                                        <label for="nom"><i class="fas fa-user mr-2"></i>Nom</label>
+                                        <input type="text" class="form-control" id="nom" name="nom" placeholder="Entrez votre nom" required>
+                                    </div>
+                                    <div class="form-group fade-in" style="animation-delay: 0.1s">
+                                        <label for="prenom"><i class="fas fa-user mr-2"></i>Prénom</label>
+                                        <input type="text" class="form-control" id="prenom" name="prenom" placeholder="Entrez votre prénom" required>
+                                    </div>
+                                    <div class="form-group fade-in" style="animation-delay: 0.2s">
+                                        <label for="matricule"><i class="fas fa-id-card mr-2"></i>Matricule</label>
+                                        <input type="text" class="form-control" id="matricule" name="matricule" placeholder="Entrez votre matricule" required>
+                                    </div>
+                                    <div class="form-group fade-in" style="animation-delay: 0.3s">
+                                        <label for="email"><i class="fas fa-envelope mr-2"></i>Adresse e-mail</label>
+                                        <input type="email" class="form-control" id="email" name="email" placeholder="Entrez votre email" required>
+                                    </div>
+                                    <div class="form-group fade-in" style="animation-delay: 0.4s">
+                                        <label for="password"><i class="fas fa-lock mr-2"></i>Mot de passe</label>
+                                        <div class="position-relative">
+                                            <input type="password" class="form-control" id="password" name="password" placeholder="Créez un mot de passe" required>
+                                            <i class="far fa-eye position-absolute" id="togglePassword" style="top: 50%; right: 15px; transform: translateY(-50%); cursor: pointer; color: #6c757d;"></i>
+                                        </div>
+                                        <small class="form-text text-muted mt-2">Il doit contenir au moins 8 caractères, incluant des lettres et des chiffres.</small>
+                                    </div>
+                                    <div class="form-group fade-in" style="animation-delay: 0.5s">
+                                        <button type="submit" class="btn btn-primary btn-block py-2 mt-4"><i class="fas fa-user-plus mr-2"></i>S'inscrire</button>
+                                    </div>
+                                </form>
+                                <hr>
+                                <div class="text-center small mt-4 fade-in" style="animation-delay: 0.6s">
+                                    <p>Déjà inscrit? <a href="/connexion" class="text-primary font-weight-bold">Connectez-vous ici</a></p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="matricule">Matricule</label>
-                            <input type="text" class="form-control" id="matricule" name="matricule" placeholder="Matricule" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="email">Adresse e-mail</label>
-                            <input type="email" class="form-control" id="email" name="email" placeholder="Email" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="password">Mot de passe</label>
-                            <input type="password" class="form-control" id="password" name="password" placeholder="Mot de passe" required>
-                        </div>
-                        <button type="submit" class="btn btn-custom btn-block">S'inscrire</button>
-                    </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -49,5 +121,15 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+    <script>
+        // Toggle password visibility
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const password = document.getElementById('password');
+            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+            password.setAttribute('type', type);
+            this.classList.toggle('fa-eye');
+            this.classList.toggle('fa-eye-slash');
+        });
+    </script>
 </body>
 </html>

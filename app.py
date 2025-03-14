@@ -69,7 +69,14 @@ def inscription():
         # Envoyer OTP à l'email de l'utilisateur
         msg = Message('OTP Verification', sender=app.config['MAIL_USERNAME'], recipients=[email])
         msg.body = f'Your OTP is: {otp}'
-        mail.send(msg)
+        try:
+            mail.send(msg)
+            flash('OTP envoyé à votre adresse email.', 'success')
+            app.logger.info(f'OTP email sent to {email}')
+        except Exception as e:
+            flash(f'Erreur lors de l\'envoi de l\'email: {str(e)}', 'danger')
+            app.logger.error(f'Erreur lors de l\'envoi de l\'email: {str(e)}')
+            return redirect(url_for('inscription'))
 
         return redirect(url_for('verify_otp'))
     return render_template('inscription.html')
