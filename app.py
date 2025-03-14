@@ -72,7 +72,6 @@ def inscription():
         try:
             mail.send(msg)
             flash('OTP envoyé à votre adresse email.', 'success')
-            app.logger.info(f'OTP email sent to {email}')
         except Exception as e:
             flash(f'Erreur lors de l\'envoi de l\'email: {str(e)}', 'danger')
             app.logger.error(f'Erreur lors de l\'envoi de l\'email: {str(e)}')
