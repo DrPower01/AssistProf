@@ -24,6 +24,37 @@ class EmploiDuTemps(db.Model):
     ID_EN = db.Column(db.Integer, db.ForeignKey('enseignant.ID_EN'), nullable=True)
     enseignant = db.relationship('Enseignant', backref='schedules')
 
+class FAQ(db.Model):
+    ID_FAQ = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    Question = db.Column(db.Text, nullable=False)
+    Reponse = db.Column(db.Text, nullable=False)
+    nb_demander = db.Column(db.Integer, default=0)
+    ID_EN = db.Column(db.Integer, db.ForeignKey('enseignant.ID_EN'), nullable=True)
+    enseignant = db.relationship('Enseignant', backref='faqs')
+
+class Notification(db.Model):
+    ID_Notif = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    Contexte = db.Column(db.Text, nullable=False)
+    ID_EN = db.Column(db.Integer, db.ForeignKey('enseignant.ID_EN'), nullable=True)
+    enseignant = db.relationship('Enseignant', backref='notifications')
+
+class Document(db.Model):
+    ID_Doc = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    Nom_Doc = db.Column(db.String(100), nullable=False)
+    taille_Doc = db.Column(db.Float, nullable=False)
+    ID_EN = db.Column(db.Integer, db.ForeignKey('enseignant.ID_EN'), nullable=True)
+    enseignant = db.relationship('Enseignant', backref='documents')
+
+class Etudiants(db.Model):
+    Matricule_ET = db.Column(db.String(20), primary_key=True, unique=True)
+    Nom_ET_complet = db.Column(db.String(100), nullable=False)
+    Moyen = db.Column(db.Float)
+    Note_TP = db.Column(db.Float)
+    Note_CC = db.Column(db.Float)
+    Note_CF = db.Column(db.Float)
+    ID_EN = db.Column(db.Integer, db.ForeignKey('enseignant.ID_EN'), nullable=True)
+    enseignant = db.relationship('Enseignant', backref='etudiants')
+
 def init_db(app):
     from sqlalchemy import create_engine
     from sqlalchemy_utils import database_exists, create_database
