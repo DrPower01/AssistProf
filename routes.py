@@ -175,7 +175,8 @@ def schedule():
     return render_template('schedule.html', 
                           user_name=session['user_name'],
                           teacher=teacher,
-                          schedules=schedules)
+                          schedules=schedules,
+                          now=datetime.now())  # Pass the current date
 
 @app.route('/schedule/<int:teacher_id>')
 def teacher_schedule(teacher_id):

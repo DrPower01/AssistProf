@@ -20,7 +20,75 @@
     </div>
     {% endif %}
     
+    <!-- Weekly Schedule View Card -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+            <h5 class="card-title mb-0">Vue hebdomadaire</h5>
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-sm btn-light rounded-circle p-2" id="prev-week">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <span class="fw-medium" id="current-week">Semaine du {{ now.strftime('%d/%m/%Y') }}</span>
+                <button class="btn btn-sm btn-light rounded-circle p-2" id="next-week">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+        <div class="card-body p-3">
+            <!-- Legend -->
+            <div class="d-flex gap-3 mb-4 flex-wrap">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="bg-primary bg-opacity-25 rounded" style="width: 16px; height: 16px;"></div>
+                    <span>Cours</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="bg-success bg-opacity-25 rounded" style="width: 16px; height: 16px;"></div>
+                    <span>TD</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="bg-purple bg-opacity-25 rounded" style="width: 16px; height: 16px;"></div>
+                    <span>TP</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="bg-warning bg-opacity-25 rounded" style="width: 16px; height: 16px;"></div>
+                    <span>Projet</span>
+                </div>
+            </div>
+
+            <!-- Weekly Calendar -->
+            <div class="grid-container">
+                <div class="grid-header">
+                    <div class="grid-time"></div>
+                    <div class="grid-day">Samedi</div>
+                    <div class="grid-day">Dimanche</div>
+                    <div class="grid-day">Lundi</div>
+                    <div class="grid-day">Mardi</div>
+                    <div class="grid-day">Mercredi</div>
+                    <div class="grid-day">Jeudi</div>
+                </div>
+                <div class="grid-body">
+                    <div class="grid-time-column">
+                        {% for hour in range(7, 19) %}
+                        <div class="grid-time-slot">{{ "%02d"|format(hour) }}:00</div>
+                        {% endfor %}
+                    </div>
+                    {% for day in ["Samedi", "Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi"] %}
+                    <div class="grid-day-column" data-day="{{ day }}">
+                        {% for hour in range(7, 19) %}
+                        <div class="grid-time-slot" data-hour="{{ hour }}"></div>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- List View -->
     <div class="card shadow-sm">
+        <div class="card-header bg-white py-3">
+            <h5 class="card-title mb-0">Liste des cours</h5>
+        </div>
         <div class="card-body">
             {% if schedules %}
             <div class="table-responsive">
@@ -68,4 +136,193 @@
         </div>
     </div>
 </div>
+
+<!-- JavaScript for Weekly Schedule -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Create the schedules array from template data
+    var schedulesData = [];
+    
+    {% for schedule in schedules %}
+    schedulesData.push({
+        id: {{ schedule.ID_EMP|default(0) }},
+        jour: "{{ schedule.Jour|default('') }}",
+        debut: "{{ schedule.Heure_debut|default('00:00') }}",
+        fin: "{{ schedule.Heure_fin|default('00:00') }}",
+        salle: "{{ schedule.Salle|default('') }}",
+        filiere: "{{ schedule.Fillier|default('') }}",
+        type: "{{ schedule.Type_Cour|default('') }}",
+        groupe: "{{ schedule.Groupe|default('') }}"
+    });
+    {% endfor %}
+
+    // Function to get color class based on course type
+    function getTypeColor(type) {
+        var colors = {
+            'Cours': 'bg-primary bg-opacity-25 border-primary text-primary',
+            'TD': 'bg-success bg-opacity-25 border-success text-success',
+            'TP': 'bg-purple bg-opacity-25 border-purple text-purple',
+            'Projet': 'bg-warning bg-opacity-25 border-warning text-warning'
+        };
+        return colors[type] || 'bg-secondary bg-opacity-25 border-secondary text-secondary';
+    }
+
+    // Create course elements in the weekly schedule
+    function renderSchedule() {
+        // Clear previous courses
+        var courseItems = document.querySelectorAll('.course-item');
+        for (var i = 0; i < courseItems.length; i++) {
+            courseItems[i].remove();
+        }
+        
+        // Loop through each schedule item
+        for (var i = 0; i < schedulesData.length; i++) {
+            var course = schedulesData[i];
+            
+            // Find the cell for this day and starting hour
+            var startHourParts = course.debut.split(':');
+            var endHourParts = course.fin.split(':');
+            
+            var startHour = parseInt(startHourParts[0], 10);
+            var endHour = parseInt(endHourParts[0], 10);
+            var startMinute = parseInt(startHourParts[1], 10);
+            var endMinute = parseInt(endHourParts[1], 10);
+            
+            // Calculate duration in hours
+            var duration = (endHour - startHour) + (endMinute - startMinute) / 60;
+            
+            // Find the cell
+            var cellSelector = '.grid-day-column[data-day="' + course.jour + '"] .grid-time-slot[data-hour="' + startHour + '"]';
+            var cell = document.querySelector(cellSelector);
+            if (!cell) continue;
+            
+            // Create the course element
+            var courseEl = document.createElement('div');
+            courseEl.className = 'course-item position-absolute start-0 end-0 ' + getTypeColor(course.type) + ' rounded p-2 border small';
+            courseEl.style.top = (startMinute / 60 * 80) + 'px';
+            courseEl.style.height = (duration * 80) + 'px';
+            courseEl.style.zIndex = '10';
+            courseEl.style.overflow = 'hidden';
+            courseEl.setAttribute('data-bs-toggle', 'tooltip');
+            courseEl.setAttribute('data-bs-placement', 'top');
+            courseEl.setAttribute('data-bs-title', course.filiere + ' - Groupe ' + course.groupe);
+            
+            // Course content
+            courseEl.innerHTML = 
+                '<div class="fw-medium">' + course.filiere + '</div>' +
+                '<div class="d-flex align-items-center gap-1">' +
+                    '<i class="bi bi-clock"></i> ' + course.debut + '-' + course.fin +
+                '</div>' +
+                '<div class="d-flex align-items-center gap-1">' +
+                    '<i class="bi bi-geo-alt"></i> ' + course.salle +
+                '</div>';
+            
+            cell.appendChild(courseEl);
+        }
+        
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    }
+    
+    // Week navigation
+    var currentDate = new Date();
+    
+    function updateWeekDisplay() {
+        document.getElementById('current-week').textContent = 'Semaine du ' + currentDate.toLocaleDateString();
+    }
+    
+    var prevWeekBtn = document.getElementById('prev-week');
+    if (prevWeekBtn) {
+        prevWeekBtn.addEventListener('click', function() {
+            currentDate.setDate(currentDate.getDate() - 7);
+            updateWeekDisplay();
+        });
+    }
+    
+    var nextWeekBtn = document.getElementById('next-week');
+    if (nextWeekBtn) {
+        nextWeekBtn.addEventListener('click', function() {
+            currentDate.setDate(currentDate.getDate() + 7);
+            updateWeekDisplay();
+        });
+    }
+    
+    // Initial render
+    renderSchedule();
+});
+</script>
+
+<style>
+.grid-container {
+    display: grid;
+    grid-template-columns: 80px repeat(6, 1fr);
+    gap: 1px;
+}
+.grid-header {
+    display: contents;
+}
+.grid-time {
+    grid-column: 1;
+}
+.grid-day {
+    text-align: center;
+    font-weight: bold;
+    padding: 8px;
+    background-color: #f8f9fa;
+}
+.grid-body {
+    display: contents;
+}
+.grid-time-column {
+    display: flex;
+    flex-direction: column;
+}
+.grid-time-slot {
+    height: 80px;
+    border-top: 1px solid #dee2e6;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 8px;
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+.grid-day-column {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+.course-item {
+    position: absolute;
+    left: 0;
+    right: 0;
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+.course-item:hover {
+    transform: scale(1.02);
+}
+.bg-purple {
+    background-color: #6f42c1;
+}
+.text-purple {
+    color: #6f42c1;
+}
+.border-purple {
+    border-color: #6f42c1;
+}
+.weekly-schedule th, .weekly-schedule td {
+    text-align: center;
+}
+.day-cell {
+    padding: 0 !important;
+    height: 80px;
+}
+</style>
 {% endblock %}
