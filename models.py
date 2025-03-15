@@ -11,6 +11,7 @@ class Enseignant(db.Model):
     Mot_de_Passe = db.Column(db.String(255), nullable=False)
     otp_token = db.Column(db.String(6), nullable=True)
     verified = db.Column(db.Boolean, default=False)
+    role = db.Column(db.Enum('teacher', 'admin', name='role_types'), nullable=False, default='teacher')
 
 class EmploiDuTemps(db.Model):
     ID_EMP = db.Column(db.Integer, primary_key=True, autoincrement=True)

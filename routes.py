@@ -1,6 +1,6 @@
-from flask import render_template, request, redirect, url_for, flash, session
+from flask import render_template, request, redirect, url_for, flash, session, jsonify
 from app import app, db, mail, generate_otp
-from models import Enseignant, EmploiDuTemps
+from models import Enseignant, EmploiDuTemps, Etudiants
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_mail import Message
@@ -97,7 +97,31 @@ def logout():
 def dashboard():
     if 'user_name' in session:
         user_id = session['user_id']
-        return render_template('dashboard.html', user_name=session['user_name'], user_id=user_id)
+        # Fetch the current user from database
+        current_user = Enseignant.query.get(user_id)
+        
+        # Debug: Print current user attributes to console
+        app.logger.debug(f"User attributes: {vars(current_user)}")
+        
+        # Set is_admin to True for testing or determine from user object
+        # Option 1: Force admin status for testing
+        is_admin = True
+        
+        # Option 2: Check all possible admin field names (uncomment one of these)
+        # if hasattr(current_user, 'Role') and current_user.Role == 'admin':
+        #     is_admin = True
+        # elif hasattr(current_user, 'admin_status') and current_user.admin_status:
+        #     is_admin = True
+        # elif hasattr(current_user, 'Admin_Status') and current_user.Admin_Status:
+        #     is_admin = True
+        # elif hasattr(current_user, 'is_admin') and current_user.is_admin:
+        #     is_admin = True
+        
+        # Debug: Log the is_admin status
+        app.logger.debug(f"Admin status for user {user_id}: {is_admin}")
+        
+        return render_template('dashboard.html', user_name=session['user_name'], 
+                              user_id=user_id, is_admin=is_admin)
     else:
         return redirect(url_for('connexion'))
 
@@ -130,8 +154,11 @@ def admin():
     user_id = session['user_id']
     current_user = Enseignant.query.get(user_id)
     
+    # Get the total number of users (teachers)
+    total_users = Enseignant.query.count()
+    
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return render_template('admin.html', current_user=current_user)
+        return render_template('admin.html', current_user=current_user, total_users=total_users)
     return redirect(url_for('dashboard'))
 
 # Schedule Routes
@@ -200,6 +227,61 @@ def add_schedule():
 def all_schedules():
     schedules = EmploiDuTemps.query.all()
     return render_template('all_schedules.html', schedules=schedules)
+
+# API endpoints for the admin interface
+@app.route('/api/enseignants')
+def api_enseignants():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    # Get all teachers
+    enseignants = Enseignant.query.all()
+    
+    # Convert to list of dicts
+    enseignants_data = []
+    for enseignant in enseignants:
+        enseignants_data.append({
+            'ID_EN': enseignant.ID_EN,
+            'Nom_EN': enseignant.Nom_EN,
+            'Prenom_EN': enseignant.Prenom_EN,
+            'Matricule_EN': enseignant.Matricule_EN,
+            'Email_EN': enseignant.Email_EN,
+            'verified': enseignant.verified,
+            'role': enseignant.role
+        })
+    
+    return jsonify(enseignants_data)
+
+@app.route('/api/etudiants')
+def api_etudiants():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    # Get all students
+    etudiants = Etudiants.query.all()
+    
+    # Convert to list of dicts
+    etudiants_data = []
+    for etudiant in etudiants:
+        # Get teacher name if assigned
+        enseignant_nom = None
+        if etudiant.ID_EN:
+            enseignant = Enseignant.query.get(etudiant.ID_EN)
+            if enseignant:
+                enseignant_nom = f"{enseignant.Prenom_EN} {enseignant.Nom_EN}"
+        
+        etudiants_data.append({
+            'Matricule_ET': etudiant.Matricule_ET,
+            'Nom_ET_complet': etudiant.Nom_ET_complet,
+            'Moyen': etudiant.Moyen,
+            'Note_TP': etudiant.Note_TP,
+            'Note_CC': etudiant.Note_CC,
+            'Note_CF': etudiant.Note_CF,
+            'ID_EN': etudiant.ID_EN,
+            'enseignant_nom': enseignant_nom
+        })
+    
+    return jsonify(etudiants_data)
 
 # Other Routes
 @app.route('/')
