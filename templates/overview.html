@@ -1,0 +1,60 @@
+
+<div class="container py-4">
+    <h2 class="mb-4 fw-bold">Aperçu</h2>
+    
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-calendar-week me-2 text-primary"></i>Emploi du temps
+                    </h5>
+                    <p class="card-text">Consultez votre emploi du temps pour la semaine en cours.</p>
+                    <a href="{{ url_for('all_schedules') }}" class="btn btn-primary">
+                        <i class="bi bi-eye me-1"></i>Voir l'emploi du temps
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-clock-history me-2 text-primary"></i>Activités récentes
+                    </h5>
+                    <p class="card-text">Vos dernières activités sur la plateforme.</p>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex align-items-center">
+                            <i class="bi bi-box-arrow-in-right me-2 text-success"></i>
+                            <div>
+                                <span class="d-block">Connexion</span>
+                                <small class="text-muted">Aujourd'hui</small>
+                            </div>
+                        </li>
+                        <li class="list-group-item d-flex align-items-center">
+                            <i class="bi bi-pencil me-2 text-primary"></i>
+                            <div>
+                                <span class="d-block">Modification de cours</span>
+                                <small class="text-muted">Hier</small>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-megaphone me-2 text-primary"></i>Annonces
+                    </h5>
+                    <div class="alert alert-info">
+                        <p class="mb-0">Pas d'annonces pour le moment.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,13 +1,11 @@
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import create_engine
-from sqlalchemy_utils import database_exists, create_database
 
 db = SQLAlchemy()
 
 class Enseignant(db.Model):
     ID_EN = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    Nom_EN = db.Column(db.String(50), nullable=False)
-    Prenom_EN = db.Column(db.String(50), nullable=False)
+    Nom_EN = db.Column(db.String(50), nullable=False)  # Changed back to match database schema
+    Prenom_EN = db.Column(db.String(50), nullable=False)  # Changed back to match database schema
     Matricule_EN = db.Column(db.String(20), unique=True, nullable=False)
     Email_EN = db.Column(db.String(100), unique=True, nullable=False)
     Mot_de_Passe = db.Column(db.String(255), nullable=False)
@@ -24,8 +22,12 @@ class EmploiDuTemps(db.Model):
     Type_Cour = db.Column(db.String(20), nullable=False)
     Groupe = db.Column(db.String(20), nullable=False)
     ID_EN = db.Column(db.Integer, db.ForeignKey('enseignant.ID_EN'), nullable=True)
+    enseignant = db.relationship('Enseignant', backref='schedules')
 
 def init_db(app):
+    from sqlalchemy import create_engine
+    from sqlalchemy_utils import database_exists, create_database
+    
     engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'])
     if not database_exists(engine.url):
         create_database(engine.url)

@@ -1,12 +1,70 @@
 {% extends "base.html" %}
 
-{% block title %}Emploi du temps{% endblock %}
+{% block title %}Emploi du temps - AssistProf{% endblock %}
 
 {% block content %}
-<div class="container-fluid h-100">
-    <div class="row">
-        <div class="col-12">
-            <h1 class="text-left font-weight-bold mb-4 custom-heading">Emploi du temps</h1>
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0">
+            <i class="bi bi-calendar-week me-2"></i>Emploi du temps
+        </h2>
+        <a href="{{ url_for('add_schedule') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-2"></i>Ajouter un cours
+        </a>
+    </div>
+    
+    {% if teacher %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i>
+        <span>Emploi du temps pour {{ teacher.Nom_EN }} {{ teacher.Prenom_EN }}</span>
+    </div>
+    {% endif %}
+    
+    <div class="card shadow-sm">
+        <div class="card-body">
+            {% if schedules %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Jour</th>
+                            <th>Heure de début</th>
+                            <th>Heure de fin</th>
+                            <th>Salle</th>
+                            <th>Filière</th>
+                            <th>Type de cours</th>
+                            <th>Groupe</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for schedule in schedules %}
+                        <tr>
+                            <td>{{ schedule.Jour }}</td>
+                            <td>{{ schedule.Heure_debut }}</td>
+                            <td>{{ schedule.Heure_fin }}</td>
+                            <td>{{ schedule.Salle }}</td>
+                            <td>{{ schedule.Fillier }}</td>
+                            <td>{{ schedule.Type_Cour }}</td>
+                            <td>{{ schedule.Groupe }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary me-1">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>Aucun cours n'est encore planifié.
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>

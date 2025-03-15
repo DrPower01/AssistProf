@@ -1,0 +1,91 @@
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0">Notes</h2>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addNoteModal">
+            <i class="bi bi-plus-lg me-2"></i>Nouvelle note
+        </button>
+    </div>
+    
+    <div class="row g-4" id="notes-container">
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <span>Note d'exemple</span>
+                    <div>
+                        <button class="btn btn-sm btn-light me-1">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Ceci est un exemple de note. Vous pouvez créer, modifier et supprimer vos propres notes.</p>
+                </div>
+                <div class="card-footer text-muted">
+                    <small>Créée le: {{ now.strftime('%d/%m/%Y') }}</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <span>Rappel de cours</span>
+                    <div>
+                        <button class="btn btn-sm btn-light me-1">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">N'oubliez pas de préparer le cours de demain.</p>
+                </div>
+                <div class="card-footer text-muted">
+                    <small>Créée le: {{ now.strftime('%d/%m/%Y') }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Note Modal -->
+<div class="modal fade" id="addNoteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nouvelle note</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addNoteForm">
+                    <div class="mb-3">
+                        <label for="noteTitle" class="form-label">Titre</label>
+                        <input type="text" class="form-control" id="noteTitle" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="noteContent" class="form-label">Contenu</label>
+                        <textarea class="form-control" id="noteContent" rows="4" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="noteColor" class="form-label">Couleur</label>
+                        <select class="form-select" id="noteColor">
+                            <option value="bg-primary">Bleu</option>
+                            <option value="bg-success">Vert</option>
+                            <option value="bg-danger">Rouge</option>
+                            <option value="bg-warning">Jaune</option>
+                            <option value="bg-info">Cyan</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="submit" form="addNoteForm" class="btn btn-primary">Ajouter</button>
+            </div>
+        </div>
+    </div>
+</div>
