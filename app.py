@@ -13,7 +13,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = 'your_secret_key'
 
 # Import db and models
-from models import db, Enseignant, EmploiDuTemps
+from models import db, Enseignant, EmploiDuTemps, Etudiants  # Include Etudiants model
 
 # Initialize extensions with app
 db.init_app(app)
@@ -29,6 +29,71 @@ app.config['MAIL_USE_SSL'] = False
 
 def generate_otp():
     return random.randint(100000, 999999)
+
+# Remove the /notes route from here
+# @app.route('/notes')
+# def notes():
+#     etudiants = Etudiants.query.all()
+#     return render_template('notes.html', etudiants=etudiants)
+
+@app.route('/add_student_page')
+def add_student_page():
+    return render_template('add_student.html')
+
+@app.route('/add', methods=['POST'])
+def add_student():
+    nom = request.form['nom']
+    cc = float(request.form['cc'])
+    cf = float(request.form['cf'])
+    tp = float(request.form['tp'])
+    moyenne = float(request.form['moyenne'])
+    id_en = session.get('user_id')  # Get enseignant ID from session
+
+    new_student = Etudiants(
+        Matricule_ET=str(random.randint(100000, 999999)),  # Generate a random matricule
+        Nom_ET_complet=nom,
+        Note_CC=cc,
+        Note_CF=cf,
+        Note_TP=tp,
+        Moyen=moyenne,
+        ID_EN=id_en  # Assign enseignant ID
+    )
+    db.session.add(new_student)
+    db.session.commit()
+    flash('Étudiant ajouté avec succès!', 'success')
+    return redirect(url_for('notes'))
+
+@app.route('/edit/<id>', methods=['POST'])
+def edit_student(id):
+    student = Etudiants.query.get(id)
+    if student:
+        student.Nom_ET_complet = request.form['nom']
+        student.Note_CC = float(request.form['cc'])
+        student.Note_CF = float(request.form['cf'])
+        student.Note_TP = float(request.form['tp'])
+        student.Moyen = float(request.form['moyenne'])
+        db.session.commit()
+        flash('Étudiant modifié avec succès!', 'success')
+    else:
+        flash('Étudiant introuvable!', 'danger')
+    return redirect(url_for('notes'))
+
+@app.route('/delete/<id>')
+def delete_student(id):
+    student = Etudiants.query.get(id)
+    if student:
+        db.session.delete(student)
+        db.session.commit()
+        flash('Étudiant supprimé avec succès!', 'success')
+    else:
+        flash('Étudiant introuvable!', 'danger')
+    return redirect(url_for('notes'))
+
+@app.route('/search_student', methods=['GET'])
+def search_student():
+    query = request.args.get('query', '')
+    etudiants = Etudiants.query.filter(Etudiants.Nom_ET_complet.like(f"%{query}%")).all()
+    return render_template('notes.html', etudiants=etudiants)
 
 # Import routes - after app, db, and models are initialized
 from routes import *
