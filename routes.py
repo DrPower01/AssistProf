@@ -135,9 +135,13 @@ def overview():
 
 @app.route('/notes')
 def notes():
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return render_template('notes.html', now=datetime.now())
-    return redirect(url_for('dashboard'))
+    user_id = session.get('user_id')  # Get the logged-in user's ID
+    if not user_id:
+        flash('Vous devez être connecté pour voir vos étudiants.', 'danger')
+        return redirect(url_for('connexion'))  # Redirect to login if not logged in
+
+    etudiants = Etudiants.query.filter_by(ID_EN=user_id).all()  # Filter students by enseignant ID
+    return render_template('notes.html', etudiants=etudiants)
 
 @app.route('/documents')
 def documents():
@@ -283,6 +287,26 @@ def api_etudiants():
         })
     
     return jsonify(etudiants_data)
+
+@app.route('/search_results', methods=['GET'])
+def search_results():
+    user_id = session.get('user_id')  # Get the logged-in user's ID
+    if not user_id:
+        flash('Vous devez être connecté pour effectuer une recherche.', 'danger')
+        return redirect(url_for('connexion'))  # Redirect to login if not logged in
+
+    query = request.args.get('query', '').strip()  # Get the search query
+    if not query:
+        flash('Veuillez entrer un nom ou un matricule pour rechercher.', 'warning')
+        return redirect(url_for('notes'))
+
+    # Search for students by name or matricule belonging to the logged-in user
+    etudiants = Etudiants.query.filter(
+        (Etudiants.ID_EN == user_id) & 
+        ((Etudiants.Nom_ET_complet.like(f"%{query}%")) | (Etudiants.Matricule_ET.like(f"%{query}%")))
+    ).all()
+
+    return render_template('search_results.html', etudiants=etudiants, query=query)
 
 # Other Routes
 @app.route('/')

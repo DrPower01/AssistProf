@@ -30,12 +30,6 @@ app.config['MAIL_USE_SSL'] = False
 def generate_otp():
     return random.randint(100000, 999999)
 
-# Remove the /notes route from here
-# @app.route('/notes')
-# def notes():
-#     etudiants = Etudiants.query.all()
-#     return render_template('notes.html', etudiants=etudiants)
-
 @app.route('/add_student_page')
 def add_student_page():
     return render_template('add_student.html')

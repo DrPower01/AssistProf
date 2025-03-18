@@ -1,9 +1,9 @@
 <div class="container py-4">
 
     <div>
-        <form method="GET" action="{{ url_for('search_student') }}">
+        <form method="GET" action="{{ url_for('search_results') }}">
             <div class="input-group">
-                <input type="search" name="query" class="form-control" placeholder="Rechercher un étudiant" required>
+                <input type="search" name="query" class="form-control" placeholder="Rechercher un étudiant (nom ou matricule)" required>
                 <button type="submit" class="btn btn-warning">Rechercher</button>
             </div>
         </form>
