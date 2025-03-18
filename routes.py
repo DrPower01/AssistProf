@@ -5,6 +5,7 @@ from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_mail import Message
 import random
+from openpyxl import Workbook  # Import openpyxl for exporting to XLSX
 
 # Authentication Routes
 @app.route('/inscription', methods=['GET', 'POST'])
@@ -307,6 +308,42 @@ def search_results():
     ).all()
 
     return render_template('search_results.html', etudiants=etudiants, query=query)
+
+@app.route('/export_students', methods=['GET'])
+def export_students():
+    user_id = session.get('user_id')  # Get the logged-in user's ID
+    if not user_id:
+        flash('Vous devez être connecté pour exporter vos étudiants.', 'danger')
+        return redirect(url_for('connexion'))  # Redirect to login if not logged in
+
+    etudiants = Etudiants.query.filter_by(ID_EN=user_id).all()  # Get students for the logged-in user
+
+    # Create an XLSX workbook and sheet
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = 'Étudiants'
+
+    # Write the header row
+    headers = ['Matricule', 'Nom', 'CC', 'CF', 'TP', 'Moyenne']
+    sheet.append(headers)
+
+    # Write student data
+    for etudiant in etudiants:
+        sheet.append([
+            etudiant.Matricule_ET,
+            etudiant.Nom_ET_complet,
+            etudiant.Note_CC,
+            etudiant.Note_CF,
+            etudiant.Note_TP,
+            etudiant.Moyen
+        ])
+
+    # Save the workbook to a response
+    response = app.response_class()
+    response.headers['Content-Disposition'] = 'attachment; filename=etudiants.xlsx'
+    response.mimetype = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    workbook.save(response.stream)
+    return response
 
 # Other Routes
 @app.route('/')
