@@ -43,22 +43,22 @@
             vertical-align: middle;
         }
         
-        .preview-Lecture {
+        .preview-Cours {
             background-color: #dbeafe;
             border: 1px solid #93c5fd;
         }
         
-        .preview-Lab {
+        .preview-TD {
             background-color: #e9d5ff;
             border: 1px solid #c084fc;
         }
         
-        .preview-Tutorial {
+        .preview-TP {
             background-color: #d1fae5;
             border: 1px solid #6ee7b7;
         }
         
-        .preview-Seminar {
+        .preview-Projet {
             background-color: #ffedd5;
             border: 1px solid #fdba74;
         }
@@ -104,10 +104,10 @@
                             </label>
                             <select class="form-select" id="type_cour" name="type_cour" required onchange="updateTypePreview()">
                                 <option value="" selected disabled>Select course type</option>
-                                <option value="Lecture">Lecture</option>
-                                <option value="Lab">Lab</option>
-                                <option value="Tutorial">Tutorial</option>
-                                <option value="Seminar">Seminar</option>
+                                <option value="Cours">Cours</option>
+                                <option value="TD">TD</option>
+                                <option value="TP">TP</option>
+                                <option value="Projet">Projet</option>
                             </select>
                             <div class="mt-2" id="typePreviewContainer" style="display: none;">
                                 <small class="text-muted">Preview: <span id="typePreview"></span></small>
