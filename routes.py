@@ -177,17 +177,35 @@ def schedule():
     teacher = Enseignant.query.get_or_404(user_id)
     schedules = EmploiDuTemps.query.filter_by(ID_EN=user_id).all()
     
+    # Format time values for JavaScript
+    for schedule in schedules:
+        if hasattr(schedule, 'Heure_debut') and schedule.Heure_debut:
+            # Format time as string in HH:MM format
+            schedule.Heure_debut = schedule.Heure_debut.strftime('%H:%M')
+        
+        if hasattr(schedule, 'Heure_fin') and schedule.Heure_fin:
+            schedule.Heure_fin = schedule.Heure_fin.strftime('%H:%M')
+    
     return render_template('schedule.html', 
                           user_name=session['user_name'],
                           teacher=teacher,
                           schedules=schedules,
                           now=datetime.now())  # Pass the current date
 
-@app.route('/schedule/<int:teacher_id>')
+@app.route('/teacher_schedule/<int:teacher_id>')
 def teacher_schedule(teacher_id):
     teacher = Enseignant.query.get_or_404(teacher_id)
     schedules = EmploiDuTemps.query.filter_by(ID_EN=teacher_id).all()
-    return render_template('schedule.html', teacher=teacher, schedules=schedules)
+    
+    # Format time values for JavaScript
+    for schedule in schedules:
+        if hasattr(schedule, 'Heure_debut') and schedule.Heure_debut:
+            schedule.Heure_debut = schedule.Heure_debut.strftime('%H:%M')
+        
+        if hasattr(schedule, 'Heure_fin') and schedule.Heure_fin:
+            schedule.Heure_fin = schedule.Heure_fin.strftime('%H:%M')
+    
+    return render_template('schedule.html', teacher=teacher, schedules=schedules, now=datetime.now())
 
 @app.route('/add_schedule', methods=['GET', 'POST'])
 def add_schedule():
