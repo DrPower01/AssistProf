@@ -1,7 +1,7 @@
 from flask import render_template, request, redirect, url_for, flash, session, jsonify
 from app import app, db, mail, generate_otp
 from models import Enseignant, EmploiDuTemps, Etudiants
-from datetime import datetime
+from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_mail import Message
 import random
@@ -364,6 +364,129 @@ def export_students():
     response.mimetype = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     workbook.save(response.stream)
     return response
+
+# Function to send class reminder emails
+def send_schedule_reminder(enseignant, schedule):
+    try:
+        if not enseignant.Email_EN:
+            app.logger.warning(f"No email for teacher ID {enseignant.ID_EN}")
+            return False
+            
+        msg = Message(
+            subject='Rappel de cours - AssistProf', 
+            sender=app.config['MAIL_USERNAME'], 
+            recipients=[enseignant.Email_EN]
+        )
+        
+        # Format time values for email
+        debut = schedule.Heure_debut
+        fin = schedule.Heure_fin
+        if isinstance(debut, str):
+            debut_str = debut
+            fin_str = fin
+        else:
+            debut_str = debut.strftime('%H:%M') if debut else "N/A"
+            fin_str = fin.strftime('%H:%M') if fin else "N/A"
+        
+        msg.html = f'''
+        <h3>Rappel de cours</h3>
+        <p>Bonjour {enseignant.Prenom_EN} {enseignant.Nom_EN},</p>
+        <p>Vous avez un cours qui commence bientôt:</p>
+        <ul>
+            <li><strong>Jour:</strong> {schedule.Jour}</li>
+            <li><strong>Horaire:</strong> {debut_str} - {fin_str}</li>
+            <li><strong>Salle:</strong> {schedule.Salle}</li>
+            <li><strong>Filière:</strong> {schedule.Fillier}</li>
+            <li><strong>Type de cours:</strong> {schedule.Type_Cour}</li>
+            <li><strong>Groupe:</strong> {schedule.Groupe}</li>
+        </ul>
+        <p>Bonne journée!</p>
+        <p>L'équipe AssistProf</p>
+        '''
+        
+        mail.send(msg)
+        app.logger.info(f"Reminder email sent to {enseignant.Email_EN}")
+        return True
+    except Exception as e:
+        app.logger.error(f"Failed to send reminder email: {str(e)}")
+        return False
+
+@app.route('/api/check_upcoming_schedules', methods=['GET'])
+def check_upcoming_schedules():
+    """Check for upcoming classes and send notifications."""
+    # Security check - this can be enhanced with API tokens
+    if 'user_id' not in session:
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    user_id = session['user_id']
+    now = datetime.now()
+    current_day = now.strftime("%A")
+    
+    # Convert day names to French for comparison
+    day_mapping = {
+        'Monday': 'Lundi',
+        'Tuesday': 'Mardi',
+        'Wednesday': 'Mercredi',
+        'Thursday': 'Jeudi',
+        'Friday': 'Vendredi',
+        'Saturday': 'Samedi',
+        'Sunday': 'Dimanche'
+    }
+    
+    french_day = day_mapping.get(current_day, current_day)
+    current_time = now.strftime('%H:%M')
+    
+    # Get upcoming schedules for the user
+    upcoming_schedules = EmploiDuTemps.query.filter_by(
+        ID_EN=user_id, 
+        Jour=french_day
+    ).all()
+    
+    notifications_sent = []
+    
+    # For testing/debugging purposes
+    app.logger.info(f"Checking schedules for user {user_id} on {french_day} at {current_time}")
+    
+    # Check each schedule
+    for schedule in upcoming_schedules:
+        # Format time values
+        debut_time = schedule.Heure_debut
+        if isinstance(debut_time, str):
+            # If it's already a string in HH:MM format
+            debut_str = debut_time
+        else:
+            # If it's a time object
+            debut_str = debut_time.strftime('%H:%M') if debut_time else "00:00"
+        
+        # Calculate time difference (assuming debut_str is in HH:MM format)
+        debut_hour, debut_min = map(int, debut_str.split(':'))
+        debut_datetime = now.replace(hour=debut_hour, minute=debut_min, second=0, microsecond=0)
+        
+        # Calculate time difference in minutes
+        time_diff = (debut_datetime - now).total_seconds() / 60
+        
+        # Send notification if class is starting in 15-20 minutes
+        if 15 <= time_diff <= 20:
+            teacher = Enseignant.query.get(user_id)
+            if teacher:
+                if send_schedule_reminder(teacher, schedule):
+                    notifications_sent.append({
+                        'schedule_id': schedule.ID_EMP if hasattr(schedule, 'ID_EMP') else 'unknown',
+                        'start_time': debut_str,
+                        'status': 'sent'
+                    })
+                else:
+                    notifications_sent.append({
+                        'schedule_id': schedule.ID_EMP if hasattr(schedule, 'ID_EMP') else 'unknown',
+                        'start_time': debut_str,
+                        'status': 'failed'
+                    })
+    
+    return jsonify({
+        'checked_at': now.strftime('%Y-%m-%d %H:%M:%S'),
+        'day': french_day, 
+        'notifications': notifications_sent
+    })
 
 # Other Routes
 @app.route('/')

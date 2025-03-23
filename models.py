@@ -1,4 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 
 db = SQLAlchemy()
 
@@ -12,6 +13,7 @@ class Enseignant(db.Model):
     otp_token = db.Column(db.String(6), nullable=True)
     verified = db.Column(db.Boolean, default=False)
     role = db.Column(db.Enum('teacher', 'admin', name='role_types'), nullable=False, default='teacher')
+    fichiers = db.relationship('Fichier', backref='enseignant', lazy='dynamic')
 
 class EmploiDuTemps(db.Model):
     ID_EMP = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -39,13 +41,6 @@ class Notification(db.Model):
     ID_EN = db.Column(db.Integer, db.ForeignKey('enseignant.ID_EN'), nullable=True)
     enseignant = db.relationship('Enseignant', backref='notifications')
 
-class Document(db.Model):
-    ID_Doc = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    Nom_Doc = db.Column(db.String(100), nullable=False)
-    taille_Doc = db.Column(db.Float, nullable=False)
-    ID_EN = db.Column(db.Integer, db.ForeignKey('enseignant.ID_EN'), nullable=True)
-    enseignant = db.relationship('Enseignant', backref='documents')
-
 class Etudiants(db.Model):
     Matricule_ET = db.Column(db.String(20), primary_key=True, unique=True)
     Nom_ET_complet = db.Column(db.String(100), nullable=False)
@@ -55,6 +50,16 @@ class Etudiants(db.Model):
     Note_CF = db.Column(db.Float)
     ID_EN = db.Column(db.Integer, db.ForeignKey('enseignant.ID_EN'), nullable=True)
     enseignant = db.relationship('Enseignant', backref='etudiants')
+
+class Fichier(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), nullable=False)
+    file_type = db.Column(db.String(50), nullable=False)
+    tags = db.Column(db.String(255))
+    size = db.Column(db.Integer, nullable=False)
+    upload_date = db.Column(db.DateTime, default=datetime.utcnow)
+    data = db.Column(db.LargeBinary, nullable=False)  # Stocke le fichier en BLOB
+    ID_EN = db.Column(db.Integer, db.ForeignKey('enseignant.ID_EN'), nullable=False)
 
 def init_db(app):
     from sqlalchemy import create_engine

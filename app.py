@@ -11,9 +11,10 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:@localhost/assistprof'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = 'your_secret_key'
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # Limit file size to 16MB
 
 # Import db and models
-from models import db, Enseignant, EmploiDuTemps, Etudiants  # Include Etudiants model
+from models import db, Enseignant, EmploiDuTemps, Etudiants, Fichier  # Include Fichier model
 
 # Initialize extensions with app
 db.init_app(app)
