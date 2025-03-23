@@ -39,11 +39,11 @@
             <div class="d-flex gap-3 mb-4 flex-wrap">
                 <div class="d-flex align-items-center gap-2">
                     <div class="bg-primary bg-opacity-25 rounded" style="width: 16px; height: 16px;"></div>
-                    <span>Cours</span>
+                    <span>Cours </span>
                 </div>
                 <div class="d-flex align-items-center gap-2">
                     <div class="bg-success bg-opacity-25 rounded" style="width: 16px; height: 16px;"></div>
-                    <span>TD</span>
+                    <span>TD </span>
                 </div>
                 <div class="d-flex align-items-center gap-2">
                     <div class="bg-purple bg-opacity-25 rounded" style="width: 16px; height: 16px;"></div>
@@ -68,13 +68,13 @@
                 </div>
                 <div class="grid-body">
                     <div class="grid-time-column">
-                        {% for hour in range(7, 19) %}
+                        {% for hour in range(7, 23) %}
                         <div class="grid-time-slot">{{ "%02d"|format(hour) }}:00</div>
                         {% endfor %}
                     </div>
                     {% for day in ["Samedi", "Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi"] %}
                     <div class="grid-day-column" data-day="{{ day }}">
-                        {% for hour in range(7, 19) %}
+                        {% for hour in range(7, 23) %}
                         <div class="grid-time-slot" data-hour="{{ hour }}"></div>
                         {% endfor %}
                     </div>
