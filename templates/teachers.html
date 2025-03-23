@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teachers List</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="mb-4">Teachers List</h1>
+        
+        {% if teachers %}
+            <div class="list-group">
+                {% for teacher in teachers %}
+                    <a href="{{ url_for('teacher_schedule', teacher_id=teacher.ID_EN) }}" class="list-group-item list-group-item-action">
+                        {{ teacher.Nom }} {{ teacher.Prenom }} - {{ teacher.Email }}
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-info">No teachers found in the database.</div>
+        {% endif %}
+        
+        <a href="{{ url_for('all_schedules') }}" class="btn btn-primary mt-3">View All Schedules</a>
+    </div>
+</body>
+</html>

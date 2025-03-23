@@ -1,15 +1,369 @@
-{% extends "dashboard.html" %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administration - AssistProf</title>
+    <link rel="stylesheet" href="path/to/bootstrap.css">
+    <link rel="stylesheet" href="path/to/bootstrap-icons.css">
+</head>
+<body>
+    <div class="container py-4">
+        <h2 class="fw-bold mb-4">Administration</h2>
+        
+        <div class="row">
+            <!-- First container: User count -->
+            <div class="col-md-6 mb-3">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Nombre d'utilisateurs</h5>
+                    </div>
+                    <div class="card-body bg-white">
+                        <div class="d-flex align-items-center justify-content-center p-3">
+                            <div class="me-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="text-primary" width="48" height="48">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+                                </svg>
+                            </div>
+                            <span class="fs-1 fw-bold">{{ total_users }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Second container: Professor and student list -->
+            <div class="col-md-6 mb-3">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">Liste des profs et leurs étudiants</h5>
+                    </div>
+                    <div class="card-body bg-white">
+                        <div class="d-flex align-items-center justify-content-center p-3">
+                            <div class="text-info">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="48" height="48">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <p class="text-muted text-center">Cette fonctionnalité sera implémentée prochainement.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- User Management Section -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">Gestion des utilisateurs</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- User Type Selection - Better Styling -->
+                        <div class="row mb-4">
+                            <div class="col-md-8 mx-auto">
+                                <div class="d-flex justify-content-center gap-4">
+                                    <div class="user-type-option">
+                                        <input type="radio" class="btn-check" name="userType" id="teacherRadio" value="teacher" checked autocomplete="off">
+                                        <label class="btn btn-outline-primary fw-bold px-4 py-3 rounded-3" for="teacherRadio">
+                                            <i class="bi bi-person-badge fs-4 d-block mb-2"></i>
+                                            Enseignants
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="user-type-option">
+                                        <input type="radio" class="btn-check" name="userType" id="studentRadio" value="student" autocomplete="off">
+                                        <label class="btn btn-outline-primary fw-bold px-4 py-3 rounded-3" for="studentRadio">
+                                            <i class="bi bi-mortarboard fs-4 d-block mb-2"></i>
+                                            Étudiants
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- User Table -->
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light" id="tableHeaders">
+                                    <tr>
+                                        <th>Nom</th>
+                                        <th>Prénom</th>
+                                        <th>Matricule</th>
+                                        <th>Email</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="userTableBody">
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted py-3">
+                                            Chargement des utilisateurs...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="path/to/bootstrap.bundle.js"></script>
+    <!-- 
+    JavaScript functionality removed from here. Its purposes were:
+    1. Switch between teacher/student display when radio buttons are changed
+    2. Load user data when page loads
+    3. Make AJAX requests to fetch user data
+    4. Update table headers based on selected user type
+    5. Populate the table with user data
+    6. Handle view, edit, and delete user actions
+    7. Handle error cases when data can't be loaded
+    -->
+    
+    <!-- Enhanced CSS for the radio buttons -->
+    <style>
+        /* Hide the actual radio button */
+        .btn-check {
+            position: absolute;
+            clip: rect(0, 0, 0, 0);
+            pointer-events: none;
+        }
+        
+        /* Style for the labels */
+        .btn-check + .btn {
+            min-width: 150px;
+            text-align: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        /* Active state styling */
+        .btn-check:checked + .btn-outline-primary {
+            background-color: #0d6efd;
+            color: white;
+            border-color: #0d6efd;
+            box-shadow: 0 4px 8px rgba(13, 110, 253, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        /* Hover state */
+        .btn-outline-primary:hover {
+            background-color: #e7f1ff;
+            color: #0d6efd;
+            transform: translateY(-1px);
+        }
+        
+        /* Focus state */
+        .btn-check:focus + .btn-outline-primary {
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+        
+        /* User type option container */
+        .user-type-option {
+            display: inline-block;
+        }
+    </style>
 
-{% block title %}Admin{% endblock %}
-
-{% block content %}
-<div class="container">
-    <h1 class="mt-4">Admin</h1>
-    <p>Contenu de l'admin.</p>
-</div>
-{% endblock %}
-
-{% block admin_content %}
-<h2>Admin Content</h2>
-<p>This is the admin page content.</p>
-{% endblock %}
+    <!-- Add JavaScript to handle the radio button selection and data fetching -->
+    <script>
+        // Add event listeners to radio buttons to trigger data loading
+        document.getElementById('teacherRadio').addEventListener('change', function() {
+            if (this.checked) {
+                loadEnseignants();
+            }
+        });
+        
+        document.getElementById('studentRadio').addEventListener('change', function() {
+            if (this.checked) {
+                loadEtudiants();
+            }
+        });
+        
+        // Load data when the page is first loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load teachers by default
+            loadEnseignants();
+        });
+        
+        // Function to load and display Enseignant data
+        function loadEnseignants() {
+            const tableHeaders = document.getElementById('tableHeaders');
+            const tableBody = document.getElementById('userTableBody');
+            
+            // Update table headers for Enseignant
+            tableHeaders.innerHTML = `
+                <tr>
+                    <th>Nom</th>
+                    <th>Prénom</th>
+                    <th>Matricule</th>
+                    <th>Email</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                </tr>
+            `;
+            
+            // Show loading message
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-3">
+                        Chargement des enseignants...
+                    </td>
+                </tr>
+            `;
+            
+            // Fetch enseignants data from the server
+            fetch('/api/enseignants')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.length === 0) {
+                        tableBody.innerHTML = `
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-3">
+                                    Aucun enseignant trouvé
+                                </td>
+                            </tr>
+                        `;
+                    } else {
+                        let rowsHtml = '';
+                        data.forEach(enseignant => {
+                            rowsHtml += `
+                                <tr>
+                                    <td>${enseignant.Nom_EN}</td>
+                                    <td>${enseignant.Prenom_EN}</td>
+                                    <td>${enseignant.Matricule_EN}</td>
+                                    <td>${enseignant.Email_EN}</td>
+                                    <td>
+                                        <span class="badge ${enseignant.verified ? 'bg-success' : 'bg-warning'}">
+                                            ${enseignant.verified ? 'Vérifié' : 'Non vérifié'}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-info" onclick="viewUser(${enseignant.ID_EN}, 'teacher')">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-warning" onclick="editUser(${enseignant.ID_EN}, 'teacher')">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" onclick="deleteUser(${enseignant.ID_EN}, 'teacher')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                        tableBody.innerHTML = rowsHtml;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching teachers:', error);
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="text-center text-danger py-3">
+                                Erreur lors du chargement des enseignants
+                            </td>
+                        </tr>
+                    `;
+                });
+        }
+        
+        // Function to load and display Etudiants data
+        function loadEtudiants() {
+            const tableHeaders = document.getElementById('tableHeaders');
+            const tableBody = document.getElementById('userTableBody');
+            
+            // Update table headers for Etudiants
+            tableHeaders.innerHTML = `
+                <tr>
+                    <th>Nom complet</th>
+                    <th>Matricule</th>
+                    <th>Moyenne</th>
+                    <th>Notes (TP/CC/CF)</th>
+                    <th>Enseignant</th>
+                    <th>Actions</th>
+                </tr>
+            `;
+            
+            // Show loading message
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-3">
+                        Chargement des étudiants...
+                    </td>
+                </tr>
+            `;
+            
+            // Fetch etudiants data from the server
+            fetch('/api/etudiants')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.length === 0) {
+                        tableBody.innerHTML = `
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-3">
+                                    Aucun étudiant trouvé
+                                </td>
+                            </tr>
+                        `;
+                    } else {
+                        let rowsHtml = '';
+                        data.forEach(etudiant => {
+                            rowsHtml += `
+                                <tr>
+                                    <td>${etudiant.Nom_ET_complet}</td>
+                                    <td>${etudiant.Matricule_ET}</td>
+                                    <td>${etudiant.Moyen ? etudiant.Moyen.toFixed(2) : 'N/A'}</td>
+                                    <td>
+                                        <small>
+                                            TP: ${etudiant.Note_TP ? etudiant.Note_TP.toFixed(2) : 'N/A'} | 
+                                            CC: ${etudiant.Note_CC ? etudiant.Note_CC.toFixed(2) : 'N/A'} | 
+                                            CF: ${etudiant.Note_CF ? etudiant.Note_CF.toFixed(2) : 'N/A'}
+                                        </small>
+                                    </td>
+                                    <td>${etudiant.enseignant_nom || 'Non assigné'}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-info" onclick="viewUser('${etudiant.Matricule_ET}', 'student')">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-warning" onclick="editUser('${etudiant.Matricule_ET}', 'student')">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" onclick="deleteUser('${etudiant.Matricule_ET}', 'student')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                        tableBody.innerHTML = rowsHtml;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching students:', error);
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="text-center text-danger py-3">
+                                Erreur lors du chargement des étudiants
+                            </td>
+                        </tr>
+                    `;
+                });
+        }
+        
+        // User action handlers (to be implemented in the backend)
+        function viewUser(id, type) {
+            console.log(`View user: ${id}, type: ${type}`);
+        }
+        
+        function editUser(id, type) {
+            console.log(`Edit user: ${id}, type: ${type}`);
+        }
+        
+        function deleteUser(id, type) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
+                console.log(`Delete user: ${id}, type: ${type}`);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="text-center">Ajouter un Étudiant</h1>
+    <form action="{{ url_for('add_student') }}" method="POST">
+        <div class="mb-3">
+            <label for="nom" class="form-label">Nom</label>
+            <input type="text" class="form-control" id="nom" name="nom" required>
+        </div>
+        <div class="mb-3">
+            <label for="cc" class="form-label">CC</label>
+            <input type="number" class="form-control" id="cc" name="cc" required>
+        </div>
+        <div class="mb-3">
+            <label for="cf" class="form-label">CF</label>
+            <input type="number" class="form-control" id="cf" name="cf" required>
+        </div>
+        <div class="mb-3">
+            <label for="tp" class="form-label">TP</label>
+            <input type="number" class="form-control" id="tp" name="tp" required>
+        </div>
+        <div class="mb-3">
+            <label for="moyenne" class="form-label">Moyenne</label>
+            <input type="number" step="0.01" class="form-control" id="moyenne" name="moyenne" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Ajouter</button>
+        <a href="{{ url_for('notes') }}" class="btn btn-secondary">Annuler</a>
+    </form>
+</div>
+{% endblock %}

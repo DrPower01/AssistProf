@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="text-center">Résultats de la Recherche</h1>
+    <p class="text-center">Résultats pour la recherche : <strong>{{ query }}</strong></p>
+
+    {% if etudiants %}
+    <table class="table table-bordered">
+        <thead class="table-secondary">
+            <tr>
+                <th>Matricule</th>
+                <th>Nom</th>
+                <th>CC</th>
+                <th>CF</th>
+                <th>TP</th>
+                <th>Moyenne</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for etudiant in etudiants %}
+            <tr>
+                <td>{{ etudiant.Matricule_ET }}</td>
+                <td>{{ etudiant.Nom_ET_complet }}</td>
+                <td>{{ etudiant.Note_CC }}</td>
+                <td>{{ etudiant.Note_CF }}</td>
+                <td>{{ etudiant.Note_TP }}</td>
+                <td>{{ etudiant.Moyen }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="alert alert-warning text-center">Aucun étudiant trouvé pour la recherche : <strong>{{ query }}</strong></div>
+    {% endif %}
+
+    <div class="text-center mt-4">
+        <a href="{{ url_for('notes') }}" class="btn btn-secondary">Retour</a>
+    </div>
+</div>
+{% endblock %}

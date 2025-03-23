@@ -1,13 +1,501 @@
 {% extends "base.html" %}
 
-{% block title %}Emploi du temps{% endblock %}
+{% block title %}Emploi du temps - AssistProf{% endblock %}
 
 {% block content %}
-<div class="container-fluid h-100">
-    <div class="row">
-        <div class="col-12">
-            <h1 class="text-left font-weight-bold mb-4 custom-heading">Emploi du temps</h1>
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0">
+            <i class="bi bi-calendar-week me-2"></i>Emploi du temps
+        </h2>
+        <a href="{{ url_for('add_schedule') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-2"></i>Ajouter un cours
+        </a>
+    </div>
+    
+    {% if teacher %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i>
+        <span>Emploi du temps pour {{ teacher.Nom_EN }} {{ teacher.Prenom_EN }}</span>
+    </div>
+    {% endif %}
+    
+    <!-- Weekly Schedule View Card -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+            <h5 class="card-title mb-0">Vue hebdomadaire</h5>
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-sm btn-light rounded-circle p-2" id="prev-week">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <span class="fw-medium" id="current-week">Semaine du {{ now.strftime('%d/%m/%Y') }}</span>
+                <button class="btn btn-sm btn-light rounded-circle p-2" id="next-week">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+        <div class="card-body p-3">
+            <!-- Legend -->
+            <div class="d-flex gap-3 mb-4 flex-wrap">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="bg-primary bg-opacity-25 rounded" style="width: 16px; height: 16px;"></div>
+                    <span>Cours </span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="bg-success bg-opacity-25 rounded" style="width: 16px; height: 16px;"></div>
+                    <span>TD </span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="bg-purple bg-opacity-25 rounded" style="width: 16px; height: 16px;"></div>
+                    <span>TP</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="bg-warning bg-opacity-25 rounded" style="width: 16px; height: 16px;"></div>
+                    <span>Projet</span>
+                </div>
+            </div>
+
+            <!-- Weekly Calendar -->
+            <div class="grid-container border rounded overflow-hidden">
+                <div class="grid-header bg-light">
+                    <div class="grid-time text-muted"></div>
+                    <div class="grid-day border-start">Samedi</div>
+                    <div class="grid-day border-start">Dimanche</div>
+                    <div class="grid-day border-start">Lundi</div>
+                    <div class="grid-day border-start">Mardi</div>
+                    <div class="grid-day border-start">Mercredi</div>
+                    <div class="grid-day border-start">Jeudi</div>
+                </div>
+                <div class="grid-body">
+                    <div class="grid-time-column text-end text-muted">
+                        {% for hour in range(7, 23) %}
+                        <div class="grid-time-slot">{{ "%02d"|format(hour) }}:00</div>
+                        {% endfor %}
+                    </div>
+                    {% for day in ["Samedi", "Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi"] %}
+                    <div class="grid-day-column border-start" data-day="{{ day }}">
+                        {% for hour in range(7, 23) %}
+                        <div class="grid-time-slot {% if hour % 2 == 0 %}bg-light bg-opacity-25{% endif %}" data-hour="{{ hour }}"></div>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- List View -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white py-3">
+            <h5 class="card-title mb-0">Liste des cours</h5>
+        </div>
+        <div class="card-body">
+            {% if schedules %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Jour</th>
+                            <th>Heure de début</th>
+                            <th>Heure de fin</th>
+                            <th>Salle</th>
+                            <th>Filière</th>
+                            <th>Type de cours</th>
+                            <th>Groupe</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for schedule in schedules %}
+                        <tr>
+                            <td>{{ schedule.Jour }}</td>
+                            <td>{{ schedule.Heure_debut }}</td>
+                            <td>{{ schedule.Heure_fin }}</td>
+                            <td>{{ schedule.Salle }}</td>
+                            <td>{{ schedule.Fillier }}</td>
+                            <td>{{ schedule.Type_Cour }}</td>
+                            <td>{{ schedule.Groupe }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary me-1">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>Aucun cours n'est encore planifié.
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
+
+<!-- JavaScript for Weekly Schedule -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Create the schedules array from template data
+    var schedulesData = [];
+    
+    {% for schedule in schedules %}
+    schedulesData.push({
+        id: {{ schedule.ID_EMP|default(0) }},
+        jour: "{{ schedule.Jour|default('') }}",
+        debut: "{{ schedule.Heure_debut|default('00:00') }}",
+        fin: "{{ schedule.Heure_fin|default('00:00') }}",
+        salle: "{{ schedule.Salle|default('') }}",
+        filiere: "{{ schedule.Fillier|default('') }}",
+        type: "{{ schedule.Type_Cour|default('') }}",
+        groupe: "{{ schedule.Groupe|default('') }}"
+    });
+    {% endfor %}
+
+    // Function to get color class based on course type
+    function getTypeColor(type) {
+        var colors = {
+            'Cours': 'bg-primary text-white border-primary',
+            'TD': 'bg-success text-white border-success',
+            'TP': 'bg-purple text-white border-purple',
+            'Projet': 'bg-warning text-white border-warning'
+        };
+        return colors[type] || 'bg-secondary text-white border-secondary';
+    }
+
+    // Function to properly parse time string to hours and minutes
+    function parseTime(timeStr) {
+        // First normalize the time format
+        if (!timeStr) return { hours: 0, minutes: 0 };
+        
+        // Convert Python datetime.time object string format to HH:MM
+        // It could be in formats like "08:00:00" or "8:00"
+        let cleanTime = timeStr;
+        if (typeof timeStr === 'object') {
+            // If it's already a JS Date object
+            return {
+                hours: timeStr.getHours(),
+                minutes: timeStr.getMinutes()
+            };
+        }
+        
+        // Handle string formats
+        let parts = cleanTime.split(':');
+        return {
+            hours: parseInt(parts[0], 10),
+            minutes: parseInt(parts[1], 10)
+        };
+    }
+
+    // Create course elements in the weekly schedule
+    function renderSchedule() {
+        // Clear previous courses
+        var courseItems = document.querySelectorAll('.course-item');
+        for (var i = 0; i < courseItems.length; i++) {
+            courseItems[i].remove();
+        }
+        
+        // Debug output
+        console.log('Rendering schedule with ' + schedulesData.length + ' items');
+        
+        // Calculate cell height once (it's consistent across all cells)
+        const sampleCell = document.querySelector('.grid-time-slot');
+        const cellHeight = sampleCell ? sampleCell.offsetHeight : 80; // Default to 80px if not found
+        
+        // Loop through each schedule item
+        for (var i = 0; i < schedulesData.length; i++) {
+            var course = schedulesData[i];
+            console.log('Processing course:', course);
+            
+            // Parse time values
+            var startTime = parseTime(course.debut);
+            var endTime = parseTime(course.fin);
+            
+            console.log('Start time parsed:', startTime, 'End time parsed:', endTime);
+            
+            var startHour = startTime.hours;
+            var startMinute = startTime.minutes;
+            var endHour = endTime.hours;
+            var endMinute = endTime.minutes;
+            
+            // Calculate duration in hours
+            var duration = (endHour - startHour) + (endMinute - startMinute) / 60;
+            
+            // Make sure we have a valid duration
+            if (duration <= 0) {
+                console.warn('Invalid duration for course:', course);
+                continue;
+            }
+            
+            console.log('Course duration:', duration, 'hours');
+            
+            // Find the column for this day
+            var dayColumn = document.querySelector('.grid-day-column[data-day="' + course.jour + '"]');
+            if (!dayColumn) {
+                console.warn('Day column not found for:', course.jour);
+                continue;
+            }
+
+            // Find all time slots in this day column
+            var timeSlots = dayColumn.querySelectorAll('.grid-time-slot');
+            
+            // Calculate index based on start hour (relative to our range starting at 7:00)
+            var slotIndex = startHour - 7;
+            if (slotIndex < 0 || slotIndex >= timeSlots.length) {
+                console.warn('Time slot index out of range:', slotIndex, 'for hour', startHour);
+                continue;
+            }
+            
+            // Get the target time slot
+            var targetSlot = timeSlots[slotIndex];
+            
+            // Create the course element
+            var courseEl = document.createElement('div');
+            
+            // Use the text-white class for all items
+            courseEl.className = 'course-item ' + getTypeColor(course.type) + ' rounded p-2 border small';
+            
+            // Position absolutely within the day column
+            // Calculate top position based on hour and minute
+            var topPosition = slotIndex * cellHeight + (startMinute / 60 * cellHeight);
+            var heightValue = duration * cellHeight;
+            
+            courseEl.style.position = 'absolute';
+            courseEl.style.top = topPosition + 'px';
+            courseEl.style.left = '0';
+            courseEl.style.right = '0';
+            courseEl.style.height = heightValue + 'px';
+            courseEl.style.zIndex = '10';
+            courseEl.style.overflow = 'hidden';
+            
+            courseEl.setAttribute('data-bs-toggle', 'tooltip');
+            courseEl.setAttribute('data-bs-placement', 'top');
+            courseEl.setAttribute('data-bs-title', course.filiere + ' - Groupe ' + course.groupe);
+            
+            // Add schedule ID as data attribute for edit/delete functionality
+            courseEl.setAttribute('data-schedule-id', course.id);
+            
+            // Course content with text-white class added to the small text
+            courseEl.innerHTML = 
+                '<div class="fw-medium">' + course.filiere + '</div>' +
+                '<div class="d-flex align-items-center gap-1">' +
+                    '<i class="bi bi-clock"></i> ' + course.debut + '-' + course.fin +
+                '</div>' +
+                '<div class="d-flex align-items-center gap-1">' +
+                    '<i class="bi bi-geo-alt"></i> ' + course.salle +
+                '</div>' +
+                '<div class="small">' + course.type + ' - Grp ' + course.groupe + '</div>';
+            
+            // Add click event to show edit options
+            courseEl.addEventListener('click', function(e) {
+                const scheduleId = this.getAttribute('data-schedule-id');
+                console.log('Schedule clicked:', scheduleId);
+                // You could show a modal or redirect to edit page
+                // window.location.href = '/edit_schedule/' + scheduleId;
+            });
+            
+            // Append to day column (not individual cell)
+            dayColumn.appendChild(courseEl);
+        }
+        
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    }
+    
+    // Week navigation
+    var currentDate = new Date();
+    
+    function updateWeekDisplay() {
+        document.getElementById('current-week').textContent = 'Semaine du ' + currentDate.toLocaleDateString();
+    }
+    
+    // Add event listeners to week navigation buttons
+    var prevWeekBtn = document.getElementById('prev-week');
+    if (prevWeekBtn) {
+        prevWeekBtn.addEventListener('click', function() {
+            currentDate.setDate(currentDate.getDate() - 7);
+            updateWeekDisplay();
+            // Here we would ideally fetch new data for the selected week
+            // For now, we'll just re-render the existing schedules
+            renderSchedule();
+        });
+    }
+    
+    var nextWeekBtn = document.getElementById('next-week');
+    if (nextWeekBtn) {
+        nextWeekBtn.addEventListener('click', function() {
+            currentDate.setDate(currentDate.getDate() + 7);
+            updateWeekDisplay();
+            // Here we would ideally fetch new data for the selected week
+            renderSchedule();
+        });
+    }
+    
+    // Initial render
+    renderSchedule();
+
+    // Log total schedule items loaded
+    console.log('Loaded ' + schedulesData.length + ' schedule items');
+    
+    // Function to check for upcoming schedules and notify the user
+    function checkUpcomingSchedules() {
+        fetch('/api/check_upcoming_schedules')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Schedule check completed:', data);
+                // If notifications were sent, we could show a message to the user
+                if (data.notifications && data.notifications.length > 0) {
+                    // Optionally show a notification in the browser
+                    data.notifications.forEach(notification => {
+                        if (notification.status === 'sent') {
+                            // Create a toast notification (requires Bootstrap 5)
+                            const toastContainer = document.getElementById('toast-container');
+                            if (toastContainer) {
+                                const toast = document.createElement('div');
+                                toast.className = 'toast align-items-center text-white bg-primary border-0';
+                                toast.setAttribute('role', 'alert');
+                                toast.setAttribute('aria-live', 'assertive');
+                                toast.setAttribute('aria-atomic', 'true');
+                                toast.innerHTML = `
+                                    <div class="d-flex">
+                                        <div class="toast-body">
+                                            <i class="bi bi-bell me-2"></i>
+                                            Un rappel par email a été envoyé pour votre cours à ${notification.start_time}.
+                                        </div>
+                                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                                    </div>
+                                `;
+                                toastContainer.appendChild(toast);
+                                const bsToast = new bootstrap.Toast(toast);
+                                bsToast.show();
+                                
+                                // Remove toast after it's hidden
+                                toast.addEventListener('hidden.bs.toast', function() {
+                                    toast.remove();
+                                });
+                            }
+                        }
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error checking upcoming schedules:', error);
+            });
+    }
+    
+    // Add a toast container for notifications if it doesn't exist
+    if (!document.getElementById('toast-container')) {
+        const toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        toastContainer.className = 'position-fixed top-0 end-0 p-3';
+        toastContainer.style.zIndex = '1050';
+        document.body.appendChild(toastContainer);
+    }
+    
+    // Check for upcoming schedules immediately and then every 5 minutes
+    checkUpcomingSchedules();
+    setInterval(checkUpcomingSchedules, 5 * 60 * 1000);
+});
+</script>
+
+<style>
+.grid-container {
+    display: grid;
+    grid-template-columns: 80px repeat(6, 1fr);
+    gap: 1px;
+}
+.grid-header {
+    display: contents;
+}
+.grid-time {
+    grid-column: 1;
+}
+.grid-day {
+    text-align: center;
+    font-weight: bold;
+    padding: 8px;
+    background-color: #f8f9fa;
+}
+.grid-body {
+    display: contents;
+}
+.grid-time-column {
+    display: flex;
+    flex-direction: column;
+}
+.grid-time-slot {
+    height: 80px;
+    border-top: 1px solid #dee2e6;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 8px;
+    font-size: 0.875rem;
+    color: #6c757d;
+    box-sizing: border-box; /* Ensure padding doesn't affect height calculation */
+}
+.grid-day-column {
+    display: flex;
+    flex-direction: column;
+    position: relative; /* Position container for absolute positioning of events */
+    min-height: 1280px; /* 16 hours (7-23) × 80px height */
+}
+.course-item {
+    position: absolute;
+    left: 0;
+    right: 0;
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid;
+    cursor: pointer;
+    transition: transform 0.2s;
+    box-sizing: border-box;
+    /* Make sure all text is white regardless of background color */
+    color: white;
+}
+.course-item:hover {
+    transform: scale(1.02);
+    z-index: 20 !important; /* Ensure hovered item is on top */
+}
+.bg-primary {
+    background-color: rgba(13, 110, 253, 0.9) !important;
+}
+.bg-success {
+    background-color: rgba(25, 135, 84, 0.9) !important;
+}
+.bg-purple {
+    background-color: rgba(111, 66, 193, 0.9) !important;
+}
+.bg-warning {
+    background-color: rgba(255, 193, 7, 0.9) !important;
+}
+.bg-secondary {
+    background-color: rgba(108, 117, 125, 0.9) !important;
+}
+.text-purple {
+    color: #6f42c1;
+}
+.border-purple {
+    border-color: #6f42c1;
+}
+.weekly-schedule th, .weekly-schedule td {
+    text-align: center;
+}
+.day-cell {
+    padding: 0 !important;
+    height: 80px;
+}
+</style>
 {% endblock %}

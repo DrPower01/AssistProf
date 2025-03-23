@@ -8,27 +8,96 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Flex:wght@400;700&display=swap">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <style>
+        .bg-primary-dark {
+            background-color: #3949ab; /* Deep indigo color */
+        }
+    </style>
 </head>
 <body>
     <div class="container-fluid vh-100">
         <div class="row h-100">
             <!-- Sidebar -->
-            <div class="col-md-2 bg-dark text-white d-flex flex-column align-items-start p-3">
-                <h2 class="mb-4">AssistProf</h2>
+            <div class="col-md-2 bg-primary-dark text-white d-flex flex-column align-items-start p-3">
+                <h2 class="mb-3">AssistProf</h2>
+                
+                <!-- User Profile at the top - Now using dynamic user data -->
+                <div class="w-100 mb-4 pb-3 border-bottom border-secondary">
+                    <div class="d-flex align-items-center">
+                        <div class="avatar-sm mr-2">
+                            <i class="fas fa-user-circle fa-2x"></i>
+                        </div>
+                        <div>
+                            <small class="text-light">{{ session.get('user_role', 'Professor') }}</small>
+                            <small class="d-block text-light">{{ session.get('user_name', 'Guest') }}</small>
+                        </div>
+                    </div>
+                </div>
+                
                 <ul class="nav flex-column">
                     <li class="nav-item">
-                        <a class="nav-link text-white" href="/dashboard">Dashboard</a>
+                        <a class="nav-link text-white" href="/dashboard">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-white" href="/schedule">Emploi du temps</a>
+                        <a class="nav-link text-white" href="/schedule">
+                            <i class="fas fa-calendar-alt"></i> Emploi du temps
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-white" href="#">Profile</a>
+                        <a class="nav-link text-white" href="#">
+                            <i class="fas fa-user"></i> Profile
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-white" href="/logout">Logout</a>
+                        <a class="nav-link text-white" href="/logout">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
                     </li>
                 </ul>
+                
+                <!-- Quick Access Tools -->
+                <div class="mt-4 mb-3">
+                    <h6 class="text-uppercase text-light font-weight-bold pl-2">Quick Access</h6>
+                    <div class="d-flex flex-wrap mt-2">
+                        <a href="/new-course" class="quick-tool-btn m-1" title="Create New Course">
+                            <i class="fas fa-book"></i>
+                        </a>
+                        <a href="/messages" class="quick-tool-btn m-1" title="Messages">
+                            <i class="fas fa-envelope"></i>
+                        </a>
+                        <a href="/tasks" class="quick-tool-btn m-1" title="Tasks">
+                            <i class="fas fa-tasks"></i>
+                        </a>
+                        <a href="/notes" class="quick-tool-btn m-1" title="Notes">
+                            <i class="fas fa-sticky-note"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Collapsible Resources Section -->
+                <div class="mt-3">
+                    <p class="collapsible-header" data-toggle="collapse" data-target="#resourcesCollapse">
+                        <i class="fas fa-folder mr-2"></i> Resources
+                        <i class="fas fa-chevron-down float-right mt-1"></i>
+                    </p>
+                    <div class="collapse" id="resourcesCollapse">
+                        <div class="pl-3 small">
+                            <a href="/resources/documents" class="d-block mb-2 text-light">
+                                <i class="fas fa-file-alt mr-2"></i> Documents
+                            </a>
+                            <a href="/resources/links" class="d-block mb-2 text-light">
+                                <i class="fas fa-link mr-2"></i> Useful Links
+                            </a>
+                            <a href="/resources/templates" class="d-block mb-2 text-light">
+                                <i class="fas fa-file-code mr-2"></i> Templates
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Remove the sidebar footer with user info that was here before -->
             </div>
             <!-- Main content -->
             <div class="col-md-10">
@@ -40,5 +109,63 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+    
+    <!-- Additional styles for the modern sidebar -->
+    <style>
+        .bg-primary-dark {
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .nav-link {
+            border-radius: 5px;
+            margin-bottom: 5px;
+            transition: all 0.3s;
+        }
+        
+        .nav-link:hover {
+            background-color: rgba(255,255,255,0.1);
+            transform: translateX(3px);
+        }
+        
+        .quick-tool-btn {
+            width: 40px;
+            height: 40px;
+            background-color: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            transition: all 0.3s;
+        }
+        
+        .quick-tool-btn:hover {
+            background-color: rgba(255,255,255,0.2);
+            color: white;
+            transform: scale(1.05);
+        }
+        
+        .collapsible-header {
+            cursor: pointer;
+            color: white;
+            padding: 8px;
+            border-radius: 5px;
+            background-color: rgba(255,255,255,0.05);
+        }
+        
+        .collapsible-header:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+        
+        .avatar-sm {
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background-color: rgba(255,255,255,0.1);
+        }
+    </style>
 </body>
 </html>
