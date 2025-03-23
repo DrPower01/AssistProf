@@ -80,7 +80,9 @@ def connexion():
         if enseignant and check_password_hash(enseignant.Mot_de_Passe, password):
             if enseignant.verified:
                 session['user_id'] = enseignant.ID_EN
-                session['user_name'] = enseignant.Nom_EN
+                session['user_name'] = f"{enseignant.Prenom_EN} {enseignant.Nom_EN}"
+                # Store user role if available, otherwise use a default
+                session['user_role'] = enseignant.role if hasattr(enseignant, 'role') else "Professor"
                 return redirect(url_for('dashboard'))
             else:
                 flash('Veuillez vérifier votre email avant de vous connecter.', 'warning')
