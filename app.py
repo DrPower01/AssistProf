@@ -11,10 +11,9 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:@localhost/assistprof'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = 'your_secret_key'
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # Limit file size to 16MB
 
 # Import db and models
-from models import db, Enseignant, EmploiDuTemps, Etudiants, Fichier  # Include Fichier model
+from models import db, Enseignant, EmploiDuTemps, Etudiants  # Include Etudiants model
 
 # Initialize extensions with app
 db.init_app(app)
@@ -89,6 +88,10 @@ def search_student():
     query = request.args.get('query', '')
     etudiants = Etudiants.query.filter(Etudiants.Nom_ET_complet.like(f"%{query}%")).all()
     return render_template('notes.html', etudiants=etudiants)
+
+@app.route('/documents')
+def documents():
+    return render_template('documents.html', now=datetime.now())
 
 # Import routes - after app, db, and models are initialized
 from routes import *

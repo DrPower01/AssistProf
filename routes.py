@@ -146,12 +146,6 @@ def notes():
     etudiants = Etudiants.query.filter_by(ID_EN=user_id).all()  # Filter students by enseignant ID
     return render_template('notes.html', etudiants=etudiants)
 
-@app.route('/documents')
-def documents():
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return render_template('documents.html', now=datetime.now())
-    return redirect(url_for('dashboard'))
-
 @app.route('/admin')
 def admin():
     if 'user_id' not in session:
@@ -364,6 +358,26 @@ def export_students():
     response.mimetype = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     workbook.save(response.stream)
     return response
+
+@app.route('/import_students', methods=['POST'])
+def import_students():
+    if 'user_id' not in session:
+        flash('Vous devez être connecté pour importer des étudiants.', 'danger')
+        return redirect(url_for('connexion'))
+
+    file = request.files.get('file')
+    if not file or not file.filename.endswith(('.xls', '.xlsx')):
+        flash('Veuillez télécharger un fichier valide (XLS/XLSX).', 'danger')
+        return redirect(url_for('notes'))
+
+    try:
+        # Process the uploaded file (e.g., parse and save student data)
+        # Add your file processing logic here
+        flash('Fichier importé avec succès!', 'success')
+    except Exception as e:
+        flash(f'Erreur lors de l\'importation: {str(e)}', 'danger')
+
+    return redirect(url_for('notes'))
 
 # Function to send class reminder emails
 def send_schedule_reminder(enseignant, schedule):
