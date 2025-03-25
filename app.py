@@ -1,5 +1,5 @@
 import random
-from flask import Flask, render_template, redirect, url_for, request, flash, session
+from flask import Flask, render_template, redirect, url_for, request, flash, session, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from flask_mail import Mail, Message
@@ -10,7 +10,7 @@ from sqlalchemy_utils import database_exists, create_database
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:@localhost/assistprof'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.secret_key = 'your_secret_key'
+app.secret_key = 'xxxxyyyyyzzzzz'
 
 # Import db and models
 from models import db, Enseignant, EmploiDuTemps, Etudiants  # Include Etudiants model
@@ -95,20 +95,40 @@ def documents():
 
 @app.route('/edit_schedule/<int:id>', methods=['POST'])
 def edit_schedule(id):
-    schedule = EmploiDuTemps.query.get(id)
-    if schedule:
-        schedule.Jour = request.form['jour']
-        schedule.Heure_debut = request.form['heure_debut']
-        schedule.Heure_fin = request.form['heure_fin']
-        schedule.Salle = request.form['salle']
-        schedule.Fillier = request.form['filiere']
-        schedule.Type_Cour = request.form['type']
-        schedule.Groupe = request.form['groupe']
-        db.session.commit()
-        flash('Cours modifié avec succès!', 'success')
+    if request.content_type == 'application/json':
+        # Handle JSON request from fetch API
+        data = request.get_json()
+        schedule = EmploiDuTemps.query.get(id)
+        
+        if schedule:
+            schedule.Jour = data.get('jour', schedule.Jour)
+            schedule.Heure_debut = data.get('heure_debut', schedule.Heure_debut)
+            schedule.Heure_fin = data.get('heure_fin', schedule.Heure_fin)
+            schedule.Salle = data.get('salle', schedule.Salle)
+            schedule.Fillier = data.get('filiere', schedule.Fillier)
+            schedule.Type_Cour = data.get('type', schedule.Type_Cour)
+            schedule.Groupe = data.get('groupe', schedule.Groupe)
+            
+            db.session.commit()
+            return jsonify({'success': True})
+        else:
+            return jsonify({'success': False, 'message': 'Schedule not found'})
     else:
-        flash('Cours introuvable!', 'danger')
-    return redirect(url_for('schedule'))
+        # Handle form submission
+        schedule = EmploiDuTemps.query.get(id)
+        if schedule:
+            schedule.Jour = request.form['jour']
+            schedule.Heure_debut = request.form['heure_debut']
+            schedule.Heure_fin = request.form['heure_fin']
+            schedule.Salle = request.form['salle']
+            schedule.Fillier = request.form['filiere']
+            schedule.Type_Cour = request.form['type']
+            schedule.Groupe = request.form['groupe']
+            db.session.commit()
+            flash('Cours modifié avec succès!', 'success')
+        else:
+            flash('Cours introuvable!', 'danger')
+        return redirect(url_for('schedule'))
 
 @app.route('/delete_schedule/<int:id>', methods=['GET'])
 def delete_schedule(id):

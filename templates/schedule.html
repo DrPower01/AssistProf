@@ -331,10 +331,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 '</div>' +
                 '<div class="small">' + course.type + ' - Grp ' + course.groupe + '</div>';
             
-            // Add click event to show edit options
-            courseEl.addEventListener('click', function(e) {
-                showScheduleModal(course);
-            });
+            // Add resize handle
+            const resizeHandle = document.createElement('div');
+            resizeHandle.className = 'resize-handle';
+            courseEl.appendChild(resizeHandle);
             
             // Append to day column (not individual cell)
             dayColumn.appendChild(courseEl);
@@ -348,6 +348,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Attach click events after rendering
         attachScheduleClickEvents();
+
+        // Make schedule items draggable
+        makeScheduleDraggable();
     }
     
     // Week navigation
@@ -493,13 +496,207 @@ document.addEventListener('DOMContentLoaded', function() {
     function attachScheduleClickEvents() {
         const scheduleItems = document.querySelectorAll('.course-item');
         scheduleItems.forEach(item => {
-            item.addEventListener('click', function() {
+            item.addEventListener('click', function(e) {
+                // Ignore clicks on the resize handle
+                if (e.target.classList.contains('resize-handle')) {
+                    return;
+                }
+                
                 const scheduleId = this.getAttribute('data-schedule-id');
                 const schedule = schedulesData.find(s => s.id == scheduleId);
                 if (schedule) {
                     showScheduleModal(schedule);
                 }
             });
+        });
+    }
+
+    // Enable dragging for schedule items
+    function makeScheduleDraggable() {
+        const scheduleItems = document.querySelectorAll('.course-item');
+        scheduleItems.forEach(item => {
+            item.setAttribute('draggable', 'true');
+
+            // Handle drag start
+            item.addEventListener('dragstart', function(e) {
+                e.dataTransfer.setData('text/plain', this.getAttribute('data-schedule-id'));
+                this.classList.add('dragging');
+            });
+
+            // Handle drag end
+            item.addEventListener('dragend', function() {
+                this.classList.remove('dragging');
+            });
+            
+            // Make items resizable via the resize handle
+            const resizeHandle = item.querySelector('.resize-handle');
+            
+            let isResizing = false;
+            let startY;
+            let startHeight;
+
+            resizeHandle.addEventListener('mousedown', function(e) {
+                isResizing = true;
+                startY = e.clientY;
+                startHeight = parseInt(getComputedStyle(item).height, 10);
+                e.stopPropagation();  // Prevent triggering drag or click
+                e.preventDefault();  // Prevent text selection
+            });
+
+            document.addEventListener('mousemove', function(e) {
+                if (!isResizing) return;
+                
+                const cellHeight = document.querySelector('.grid-time-slot').offsetHeight;
+                const deltaY = e.clientY - startY;
+                
+                // Snap to half-hour increments (half of cell height)
+                const halfHourHeight = cellHeight / 2;
+                const snapDeltaY = Math.round(deltaY / halfHourHeight) * halfHourHeight;
+                
+                const newHeight = startHeight + snapDeltaY;
+                
+                // Minimum height of 1/2 hour
+                if (newHeight >= halfHourHeight) {
+                    item.style.height = newHeight + 'px';
+                    
+                    // Update the end time based on height
+                    const scheduleId = item.getAttribute('data-schedule-id');
+                    const schedule = schedulesData.find(s => s.id == scheduleId);
+                    if (schedule) {
+                        // Calculate duration in half-hours based on height
+                        const durationHalfHours = Math.round(newHeight / halfHourHeight);
+                        const durationHours = durationHalfHours / 2;
+                        
+                        // Parse start time
+                        const startTime = parseTime(schedule.debut);
+                        
+                        // Calculate end time
+                        let endHours = startTime.hours + Math.floor(durationHours);
+                        let endMinutes = startTime.minutes + ((durationHours % 1) * 60);
+                        
+                        // Adjust if minutes >= 60
+                        if (endMinutes >= 60) {
+                            endHours += 1;
+                            endMinutes -= 60;
+                        }
+                        
+                        // Format end time
+                        schedule.fin = `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
+                        
+                        // Update text on the item
+                        const timeDisplay = item.querySelector('.bi-clock').parentElement;
+                        timeDisplay.innerHTML = `<i class="bi bi-clock"></i> ${schedule.debut}-${schedule.fin}`;
+                    }
+                }
+            });
+
+            document.addEventListener('mouseup', function() {
+                if (isResizing) {
+                    isResizing = false;
+                    
+                    // Save the changes to the server
+                    const scheduleId = item.getAttribute('data-schedule-id');
+                    const schedule = schedulesData.find(s => s.id == scheduleId);
+                    if (schedule) {
+                        saveScheduleChanges(schedule);
+                    }
+                }
+            });
+        });
+
+        const dayColumns = document.querySelectorAll('.grid-day-column');
+        dayColumns.forEach(column => {
+            // Allow dropping
+            column.addEventListener('dragover', function(e) {
+                e.preventDefault();
+            });
+
+            // Handle drop
+            column.addEventListener('drop', function(e) {
+                e.preventDefault();
+                const scheduleId = e.dataTransfer.getData('text/plain');
+                const draggedItem = document.querySelector(`.course-item[data-schedule-id="${scheduleId}"]`);
+                if (draggedItem) {
+                    const newDay = this.getAttribute('data-day');
+                    const cellHeight = this.querySelector('.grid-time-slot').offsetHeight;
+                    const dropY = e.offsetY;
+                    
+                    // Calculate hour and snap to hour/half-hour
+                    const slotIndex = Math.floor(dropY / cellHeight);
+                    const newHour = slotIndex + 7; // Time slots start at 7:00
+                    
+                    // Determine if we should snap to half hour or full hour
+                    const fractionInCell = (dropY % cellHeight) / cellHeight;
+                    const isHalfHour = fractionInCell >= 0.25 && fractionInCell < 0.75;
+                    
+                    // Find the schedule in our data
+                    const scheduleIndex = schedulesData.findIndex(s => s.id == scheduleId);
+                    if (scheduleIndex !== -1) {
+                        const schedule = schedulesData[scheduleIndex];
+                        
+                        // Ensure the time is within the allowed range (7:00 to 22:00)
+                        if (newHour < 7 || newHour >= 22) {
+                            alert('Les horaires doivent être entre 7h00 et 22h00.');
+                            return;
+                        }
+
+                        // Update schedule data
+                        schedule.jour = newDay;
+                        schedule.debut = `${String(newHour).padStart(2, '0')}:${isHalfHour ? '30' : '00'}`;
+                        
+                        // Parse duration from the original schedule to maintain the same duration
+                        const startTime = parseTime(schedule.debut);
+                        let endTime = { 
+                            hours: startTime.hours + 1, // Default 1 hour duration
+                            minutes: startTime.minutes 
+                        };
+                        
+                        // Format the end time
+                        schedule.fin = `${String(endTime.hours).padStart(2, '0')}:${String(endTime.minutes).padStart(2, '0')}`;
+
+                        // Update the UI - position at hour or half-hour
+                        const topPosition = slotIndex * cellHeight + (isHalfHour ? cellHeight / 2 : 0);
+                        draggedItem.style.top = `${topPosition}px`;
+                        
+                        // Move the element to the new column
+                        this.appendChild(draggedItem);
+
+                        // Save the changes to the server
+                        saveScheduleChanges(schedule);
+                    }
+                }
+            });
+        });
+    }
+
+    // Function to save schedule changes to server
+    function saveScheduleChanges(schedule) {
+        fetch(`/edit_schedule/${schedule.id}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            },
+            body: JSON.stringify({
+                jour: schedule.jour,
+                heure_debut: schedule.debut,
+                heure_fin: schedule.fin,
+                salle: schedule.salle,
+                filiere: schedule.filiere,
+                type: schedule.type,
+                groupe: schedule.groupe
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log('Schedule updated successfully');
+            } else {
+                console.error('Failed to update schedule:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error updating schedule:', error);
         });
     }
 });
@@ -591,6 +788,22 @@ document.addEventListener('DOMContentLoaded', function() {
 .day-cell {
     padding: 0 !important;
     height: 80px;
+}
+.resize-handle {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 8px;
+    cursor: ns-resize;
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 0 0 4px 4px;
+}
+.resize-handle:hover {
+    background-color: rgba(255, 255, 255, 0.5);
+}
+.course-item.dragging {
+    opacity: 0.7;
 }
 </style>
 {% endblock %}
