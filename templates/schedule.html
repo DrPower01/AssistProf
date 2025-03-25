@@ -102,7 +102,6 @@
                             <th>Filière</th>
                             <th>Type de cours</th>
                             <th>Groupe</th>
-                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -115,14 +114,6 @@
                             <td>{{ schedule.Fillier }}</td>
                             <td>{{ schedule.Type_Cour }}</td>
                             <td>{{ schedule.Groupe }}</td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary me-1">
-                                    <i class="bi bi-pencil"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -133,6 +124,55 @@
                 <i class="bi bi-info-circle me-2"></i>Aucun cours n'est encore planifié.
             </div>
             {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Schedule Info -->
+<div class="modal fade" id="scheduleModal" tabindex="-1" aria-labelledby="scheduleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="editScheduleForm" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="scheduleModalLabel">Modifier le cours</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="modalScheduleId" name="id">
+                    <div class="mb-3">
+                        <label for="modalJour" class="form-label">Jour</label>
+                        <input type="text" class="form-control" id="modalJour" name="jour">
+                    </div>
+                    <div class="mb-3">
+                        <label for="modalHeureDebut" class="form-label">Heure de début</label>
+                        <input type="time" class="form-control" id="modalHeureDebut" name="heure_debut">
+                    </div>
+                    <div class="mb-3">
+                        <label for="modalHeureFin" class="form-label">Heure de fin</label>
+                        <input type="time" class="form-control" id="modalHeureFin" name="heure_fin">
+                    </div>
+                    <div class="mb-3">
+                        <label for="modalSalle" class="form-label">Salle</label>
+                        <input type="text" class="form-control" id="modalSalle" name="salle">
+                    </div>
+                    <div class="mb-3">
+                        <label for="modalFiliere" class="form-label">Filière</label>
+                        <input type="text" class="form-control" id="modalFiliere" name="filiere">
+                    </div>
+                    <div class="mb-3">
+                        <label for="modalType" class="form-label">Type de cours</label>
+                        <input type="text" class="form-control" id="modalType" name="type">
+                    </div>
+                    <div class="mb-3">
+                        <label for="modalGroupe" class="form-label">Groupe</label>
+                        <input type="text" class="form-control" id="modalGroupe" name="groupe">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" id="deleteSchedule">Supprimer</button>
+                    <button type="submit" class="btn btn-primary">Modifier</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -292,10 +332,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Add click event to show edit options
             courseEl.addEventListener('click', function(e) {
-                const scheduleId = this.getAttribute('data-schedule-id');
-                console.log('Schedule clicked:', scheduleId);
-                // You could show a modal or redirect to edit page
-                // window.location.href = '/edit_schedule/' + scheduleId;
+                showScheduleModal(course);
             });
             
             // Append to day column (not individual cell)
@@ -407,6 +444,32 @@ document.addEventListener('DOMContentLoaded', function() {
     // Check for upcoming schedules immediately and then every 5 minutes
     checkUpcomingSchedules();
     setInterval(checkUpcomingSchedules, 5 * 60 * 1000);
+
+    // Show modal with schedule details on click
+    function showScheduleModal(schedule) {
+        document.getElementById('modalScheduleId').value = schedule.id;
+        document.getElementById('modalJour').value = schedule.jour;
+        document.getElementById('modalHeureDebut').value = schedule.debut;
+        document.getElementById('modalHeureFin').value = schedule.fin;
+        document.getElementById('modalSalle').value = schedule.salle;
+        document.getElementById('modalFiliere').value = schedule.filiere;
+        document.getElementById('modalType').value = schedule.type;
+        document.getElementById('modalGroupe').value = schedule.groupe;
+
+        // Set up delete button
+        document.getElementById('deleteSchedule').onclick = function() {
+            if (confirm('Êtes-vous sûr de vouloir supprimer ce cours ?')) {
+                window.location.href = '/delete_schedule/' + schedule.id;
+            }
+        };
+
+        // Set form action for editing
+        document.getElementById('editScheduleForm').action = '/edit_schedule/' + schedule.id;
+
+        // Show the modal
+        var scheduleModal = new bootstrap.Modal(document.getElementById('scheduleModal'));
+        scheduleModal.show();
+    }
 });
 </script>
 

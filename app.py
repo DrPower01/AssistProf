@@ -93,6 +93,34 @@ def search_student():
 def documents():
     return render_template('documents.html', now=datetime.now())
 
+@app.route('/edit_schedule/<int:id>', methods=['POST'])
+def edit_schedule(id):
+    schedule = EmploiDuTemps.query.get(id)
+    if schedule:
+        schedule.Jour = request.form['jour']
+        schedule.Heure_debut = request.form['heure_debut']
+        schedule.Heure_fin = request.form['heure_fin']
+        schedule.Salle = request.form['salle']
+        schedule.Fillier = request.form['filiere']
+        schedule.Type_Cour = request.form['type']
+        schedule.Groupe = request.form['groupe']
+        db.session.commit()
+        flash('Cours modifié avec succès!', 'success')
+    else:
+        flash('Cours introuvable!', 'danger')
+    return redirect(url_for('schedule'))
+
+@app.route('/delete_schedule/<int:id>', methods=['GET'])
+def delete_schedule(id):
+    schedule = EmploiDuTemps.query.get(id)
+    if schedule:
+        db.session.delete(schedule)
+        db.session.commit()
+        flash('Cours supprimé avec succès!', 'success')
+    else:
+        flash('Cours introuvable!', 'danger')
+    return redirect(url_for('schedule'))
+
 # Import routes - after app, db, and models are initialized
 from routes import *
 
