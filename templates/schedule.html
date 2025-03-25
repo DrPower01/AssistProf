@@ -169,6 +169,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="closeModal">Fermer</button>
                     <button type="button" class="btn btn-danger" id="deleteSchedule">Supprimer</button>
                     <button type="submit" class="btn btn-primary">Modifier</button>
                 </div>
@@ -344,6 +345,9 @@ document.addEventListener('DOMContentLoaded', function() {
         var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl);
         });
+
+        // Attach click events after rendering
+        attachScheduleClickEvents();
     }
     
     // Week navigation
@@ -447,6 +451,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Show modal with schedule details on click
     function showScheduleModal(schedule) {
+        // Reset the modal form to avoid showing previous data
+        const modalForm = document.getElementById('editScheduleForm');
+        modalForm.reset();
+
+        // Clear any lingering Bootstrap modal state
+        const scheduleModalElement = document.getElementById('scheduleModal');
+        scheduleModalElement.querySelectorAll('input').forEach(input => input.value = '');
+
+        // Populate the modal with the current schedule's data
         document.getElementById('modalScheduleId').value = schedule.id;
         document.getElementById('modalJour').value = schedule.jour;
         document.getElementById('modalHeureDebut').value = schedule.debut;
@@ -464,11 +477,30 @@ document.addEventListener('DOMContentLoaded', function() {
         };
 
         // Set form action for editing
-        document.getElementById('editScheduleForm').action = '/edit_schedule/' + schedule.id;
+        modalForm.action = '/edit_schedule/' + schedule.id;
 
         // Show the modal
-        var scheduleModal = new bootstrap.Modal(document.getElementById('scheduleModal'));
+        const scheduleModal = new bootstrap.Modal(scheduleModalElement);
         scheduleModal.show();
+
+        // Add event listener to close button
+        document.getElementById('closeModal').onclick = function() {
+            scheduleModal.hide();
+        };
+    }
+
+    // Attach click events to schedule items
+    function attachScheduleClickEvents() {
+        const scheduleItems = document.querySelectorAll('.course-item');
+        scheduleItems.forEach(item => {
+            item.addEventListener('click', function() {
+                const scheduleId = this.getAttribute('data-schedule-id');
+                const schedule = schedulesData.find(s => s.id == scheduleId);
+                if (schedule) {
+                    showScheduleModal(schedule);
+                }
+            });
+        });
     }
 });
 </script>
