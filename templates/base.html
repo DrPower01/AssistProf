@@ -21,19 +21,6 @@
             <div class="col-md-2 bg-primary-dark text-white d-flex flex-column align-items-start p-3">
                 <h2 class="mb-3">AssistProf</h2>
                 
-                <!-- User Profile at the top - Now using dynamic user data -->
-                <div class="w-100 mb-4 pb-3 border-bottom border-secondary">
-                    <div class="d-flex align-items-center">
-                        <div class="avatar-sm mr-2">
-                            <i class="fas fa-user-circle fa-2x"></i>
-                        </div>
-                        <div>
-                            <small class="text-light">{{ session.get('user_role', 'Professor') }}</small>
-                            <small class="d-block text-light">{{ session.get('user_name', 'Guest') }}</small>
-                        </div>
-                    </div>
-                </div>
-                
                 <ul class="nav flex-column">
                     <li class="nav-item">
                         <a class="nav-link text-white" href="/dashboard">
@@ -67,16 +54,6 @@
                         </a>
                     </li>
                     {% endif %}
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="#">
-                            <i class="fas fa-user"></i> Profile
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="/logout">
-                            <i class="fas fa-sign-out-alt"></i> Logout
-                        </a>
-                    </li>
                 </ul>
                 
                 <!-- Quick Access Tools -->
@@ -118,18 +95,50 @@
                         </div>
                     </div>
                 </div>
-                
-                <!-- Remove the sidebar footer with user info that was here before -->
             </div>
             <!-- Main content -->
-            <div class="col-md-10">
+            <div class="col-md-10 position-relative">
+                <!-- User icon dropdown in top right corner - simplified implementation -->
+                <div class="position-absolute" style="top: 10px; right: 20px; z-index: 1000;">
+                    <div class="user-dropdown-container">
+                        <button id="userDropdown" class="btn user-dropdown" type="button">
+                            <i class="fas fa-user-circle fa-2x"></i>
+                        </button>
+                        <div id="userMenu" class="custom-dropdown-menu" style="display: none;">
+                            {% if session.get('user_name') %}
+                                <div class="dropdown-item-text">
+                                    <small class="text-muted">{{ session.get('user_role', 'Professor') }}</small>
+                                    <div class="font-weight-bold">{{ session.get('user_name', 'Guest') }}</div>
+                                </div>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item" href="/profile">
+                                    <i class="fas fa-user mr-2"></i> Profile
+                                </a>
+                                <a class="dropdown-item" href="/logout">
+                                    <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                                </a>
+                            {% else %}
+                                <a class="dropdown-item" href="/login">
+                                    <i class="fas fa-sign-in-alt mr-2"></i> Login
+                                </a>
+                                <a class="dropdown-item" href="/signup">
+                                    <i class="fas fa-user-plus mr-2"></i> Sign Up
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
                 {% block content %}{% endblock %}
             </div>
         </div>
     </div>
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <!-- Update JavaScript dependencies with specific versions and correct loading order -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js"></script>
+    
+    <!-- Include your custom scripts -->
     <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
     
     <!-- Additional styles for the modern sidebar -->
@@ -187,6 +196,73 @@
             justify-content: center;
             border-radius: 50%;
             background-color: rgba(255,255,255,0.1);
+        }
+        
+        /* User dropdown styles */
+        .user-dropdown {
+            background: none;
+            border: none;
+            color: #3949ab;
+            padding: 0;
+        }
+        
+        .user-dropdown:hover, .user-dropdown:focus {
+            color: #283593;
+            background: none;
+            box-shadow: none;
+        }
+        
+        .user-dropdown::after {
+            display: none;
+        }
+        
+        /* Custom dropdown styles */
+        .user-dropdown-container {
+            position: relative;
+        }
+        
+        .custom-dropdown-menu {
+            position: absolute;
+            right: 0;
+            top: 45px;
+            background-color: white;
+            border: 1px solid rgba(0,0,0,.15);
+            border-radius: .25rem;
+            padding: .5rem 0;
+            min-width: 10rem;
+            box-shadow: 0 .5rem 1rem rgba(0,0,0,.175);
+            z-index: 1000;
+        }
+        
+        .dropdown-item {
+            display: block;
+            width: 100%;
+            padding: .25rem 1.5rem;
+            clear: both;
+            font-weight: 400;
+            color: #212529;
+            text-align: inherit;
+            white-space: nowrap;
+            background-color: transparent;
+            border: 0;
+            text-decoration: none;
+        }
+        
+        .dropdown-item:hover, .dropdown-item:focus {
+            color: #16181b;
+            text-decoration: none;
+            background-color: #f8f9fa;
+        }
+        
+        .dropdown-item-text {
+            padding: .25rem 1.5rem;
+        }
+        
+        .dropdown-divider {
+            height: 0;
+            margin: .5rem 0;
+            overflow: hidden;
+            border-top: 1px solid #e9ecef;
         }
     </style>
 </body>

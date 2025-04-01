@@ -28,6 +28,22 @@
                         <label for="documentDescription" class="form-label">Description (optionnel)</label>
                         <textarea class="form-control" id="documentDescription" name="description" rows="3"></textarea>
                     </div>
+                    <div class="mb-3">
+                        <label for="documentTags" class="form-label">Tags (optionnel)</label>
+                        <input class="form-control" type="text" id="documentTags" name="tags" placeholder="Ex: rapport, finance">
+                    </div>
+                    <div class="mb-3">
+                        <label for="documentSize" class="form-label">Taille (en Ko)</label>
+                        <input class="form-control" type="number" id="documentSize" name="size" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="documentPosition" class="form-label">Position</label>
+                        <input class="form-control" type="text" id="documentPosition" name="position" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="documentIDEN" class="form-label">ID_EN</label>
+                        <input class="form-control" type="number" id="documentIDEN" name="ID_EN" required>
+                    </div>
                     <button type="submit" class="btn btn-primary">Télécharger</button>
                 </form>
             </div>
@@ -45,39 +61,30 @@
     </div>
     
     <div class="row" id="documentsContainer">
-        {% for document in documents %}
-        <div class="col-md-3 mb-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-body text-center">
-                    <div class="mb-3">
-                        {% if document.file_type.startswith('image') %}
-                        <i class="bi bi-file-earmark-image text-info" style="font-size: 48px;"></i>
-                        {% elif document.file_type == 'application/pdf' %}
-                        <i class="bi bi-file-earmark-pdf text-danger" style="font-size: 48px;"></i>
-                        {% elif document.file_type in ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword'] %}
-                        <i class="bi bi-file-earmark-word text-primary" style="font-size: 48px;"></i>
-                        {% elif document.file_type in ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'] %}
-                        <i class="bi bi-file-earmark-excel text-success" style="font-size: 48px;"></i>
-                        {% else %}
-                        <i class="bi bi-file-earmark text-secondary" style="font-size: 48px;"></i>
-                        {% endif %}
-                    </div>
-                    <h5 class="card-title">{{ document.name }}</h5>
-                    <p class="card-text text-muted small">Ajouté le: {{ document.upload_date.strftime('%d/%m/%Y') }}</p>
-                    <div class="d-flex justify-content-center">
-                        <a href="{{ url_for('download_file_page', file_id=document.id) }}" class="btn btn-sm btn-outline-primary me-2">
-                            <i class="bi bi-download"></i>
-                        </a>
-                        <form action="{{ url_for('delete_file', file_id=document.id) }}" method="POST" style="display: inline;">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endfor %}
+        <script>
+            fetch("{{ url_for('user_files') }}")
+                .then(response => response.json())
+                .then(files => {
+                    const container = document.getElementById('documentsContainer');
+                    files.forEach(file => {
+                        const col = document.createElement('div');
+                        col.className = 'col-md-3 mb-4';
+                        col.innerHTML = `
+                            <div class="card shadow-sm h-100">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-file-earmark text-secondary" style="font-size: 48px;"></i>
+                                    <h5 class="card-title">${file}</h5>
+                                    <div class="d-flex justify-content-center">
+                                        <a href="/uploads/{{ current_user.ID_EN }}/${file}" class="btn btn-sm btn-outline-primary me-2">
+                                            <i class="bi bi-download"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>`;
+                        container.appendChild(col);
+                    });
+                });
+        </script>
     </div>
 </div>
 

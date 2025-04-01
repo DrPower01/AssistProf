@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+import os
 db = SQLAlchemy()
 
 class Enseignant(db.Model):
@@ -13,6 +14,10 @@ class Enseignant(db.Model):
     verified = db.Column(db.Boolean, default=False)
     role = db.Column(db.Enum('teacher', 'admin', name='role_types'), nullable=False, default='teacher')
     fichiers = db.relationship('Fichier', backref='enseignant', lazy='dynamic')
+
+    def create_user_directory(self):
+        user_dir = os.path.join(os.getcwd(), 'uploads', str(self.ID_EN))
+        os.makedirs(user_dir, exist_ok=True)
 
 class EmploiDuTemps(db.Model):
     ID_EMP = db.Column(db.Integer, primary_key=True, autoincrement=True)
