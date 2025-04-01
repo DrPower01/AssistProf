@@ -436,19 +436,32 @@ def add_student_page():
 @app.route('/add', methods=['POST'])
 def add_student():
     nom = request.form['nom']
-    cc = float(request.form['cc'])
-    cf = float(request.form['cf'])
-    tp = float(request.form['tp'])
-    moyenne = float(request.form['moyenne'])
+    matricule = request.form['matricule']  # Get matricule from form
+    
+    # Handle empty values for all numeric fields
+    cc = float(request.form['cc']) if request.form['cc'] else 0
+    cf = float(request.form['cf']) if request.form['cf'] else 0
+    tp = float(request.form['tp']) if request.form['tp'] else 0
+    
+    # Calculate the average automatically (adjust formula as needed)
+    if cc > 0 and cf > 0 and tp > 0:
+        moyenne = (cc * 0.3 + cf * 0.5 + tp * 0.2)
+    elif cc > 0 and cf > 0:
+        moyenne = (cc * 0.4 + cf * 0.6)
+    elif tp > 0:
+        moyenne = tp
+    else:
+        moyenne = 0  # Default if no grades provided
+    
     id_en = session.get('user_id')  # Get enseignant ID from session
 
     new_student = Etudiants(
-        Matricule_ET=str(random.randint(100000, 999999)),  # Generate a random matricule
+        Matricule_ET=matricule,  # Use the provided matricule
         Nom_ET_complet=nom,
         Note_CC=cc,
         Note_CF=cf,
         Note_TP=tp,
-        Moyen=moyenne,
+        Moyen=moyenne,  # Use calculated average
         ID_EN=id_en  # Assign enseignant ID
     )
     db.session.add(new_student)

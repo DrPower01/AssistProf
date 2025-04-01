@@ -110,24 +110,24 @@
                     <form action="{{ url_for('add_student') }}" method="POST">
                         <input type="hidden" name="id_en" value="{{ session['user_id'] }}"> <!-- Pass enseignant ID -->
                         <div class="mb-3">
+                            <label for="matricule" class="form-label">Matricule</label>
+                            <input type="text" class="form-control" id="matricule" name="matricule" required>
+                        </div>
+                        <div class="mb-3">
                             <label for="nom" class="form-label">Nom</label>
                             <input type="text" class="form-control" id="nom" name="nom" required>
                         </div>
                         <div class="mb-3">
                             <label for="cc" class="form-label">CC</label>
-                            <input type="number" class="form-control" id="cc" name="cc" required>
+                            <input type="number" class="form-control" id="cc" name="cc">
                         </div>
                         <div class="mb-3">
                             <label for="cf" class="form-label">CF</label>
-                            <input type="number" class="form-control" id="cf" name="cf" required>
+                            <input type="number" class="form-control" id="cf" name="cf">
                         </div>
                         <div class="mb-3">
                             <label for="tp" class="form-label">TP</label>
-                            <input type="number" class="form-control" id="tp" name="tp" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="moyenne" class="form-label">Moyenne</label>
-                            <input type="number" step="0.01" class="form-control" id="moyenne" name="moyenne" required>
+                            <input type="number" class="form-control" id="tp" name="tp">
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-dismiss="modal">Fermer</button>
