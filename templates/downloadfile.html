@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="fw-bold mb-4">Télécharger le document</h2>
+    <div class="card shadow-sm">
+        <div class="card-body text-center">
+            <div class="mb-3">
+                {% if file.file_type.startswith('image') %}
+                <i class="bi bi-file-earmark-image text-info" style="font-size: 64px;"></i>
+                {% elif file.file_type == 'application/pdf' %}
+                <i class="bi bi-file-earmark-pdf text-danger" style="font-size: 64px;"></i>
+                {% elif file.file_type in ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword'] %}
+                <i class="bi bi-file-earmark-word text-primary" style="font-size: 64px;"></i>
+                {% elif file.file_type in ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'] %}
+                <i class="bi bi-file-earmark-excel text-success" style="font-size: 64px;"></i>
+                {% else %}
+                <i class="bi bi-file-earmark text-secondary" style="font-size: 64px;"></i>
+                {% endif %}
+            </div>
+            <h5 class="card-title">{{ file.name }}</h5>
+            <p class="card-text text-muted">Type: {{ file.file_type }}</p>
+            <p class="card-text text-muted">Taille: {{ file.size }} octets</p>
+            <p class="card-text text-muted">Ajouté le: {{ file.upload_date.strftime('%d/%m/%Y') }}</p>
+            <a href="{{ url_for('download_file', file_id=file.id) }}" class="btn btn-primary">
+                <i class="bi bi-download me-2"></i>Télécharger
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

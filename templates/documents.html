@@ -3,130 +3,102 @@
 {% block content %}
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold mb-0">Documents</h2>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadDocumentModal">
-            <i class="bi bi-upload me-2"></i>Télécharger un document
+        <h2 class="fw-bold mb-0">Mes Documents</h2>
+    </div>
+    
+    <!-- Upload Document Collapsible Section -->
+    <div class="mb-3">
+        <button class="btn btn-primary w-100 d-flex justify-content-between align-items-center" 
+                type="button" 
+                data-toggle="collapse" 
+                data-target="#uploadDocumentForm" 
+                aria-expanded="false">
+            <span><i class="bi bi-upload me-2"></i> Télécharger un document</span>
+            <i class="bi bi-chevron-down"></i>
         </button>
+        
+        <div class="collapse mt-2" id="uploadDocumentForm">
+            <div class="card card-body">
+                <form id="uploadDocumentForm" action="{{ url_for('upload_file') }}" method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="documentFile" class="form-label">Fichier</label>
+                        <input class="form-control" type="file" id="documentFile" name="file" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="documentDescription" class="form-label">Description (optionnel)</label>
+                        <textarea class="form-control" id="documentDescription" name="description" rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Télécharger</button>
+                </form>
+            </div>
+        </div>
     </div>
     
     <div class="card shadow-sm mb-4">
         <div class="card-body">
             <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-search"></i></span>
-                <input type="text" class="form-control" placeholder="Rechercher des documents...">
-                <button class="btn btn-outline-secondary" type="button">Rechercher</button>
+                <input type="text" class="form-control" id="searchInput" placeholder="Rechercher des documents...">
+                <button class="btn btn-outline-secondary" type="button" onclick="searchDocuments()">Rechercher</button>
             </div>
         </div>
     </div>
     
-    <div class="row">
+    <div class="row" id="documentsContainer">
+        {% for document in documents %}
         <div class="col-md-3 mb-4">
             <div class="card shadow-sm h-100">
                 <div class="card-body text-center">
                     <div class="mb-3">
-                        <i class="bi bi-file-earmark-pdf text-danger" style="font-size: 48px;"></i>
-                    </div>
-                    <h5 class="card-title">Document exemple.pdf</h5>
-                    <p class="card-text text-muted small">Ajouté le: {{ now.strftime('%d/%m/%Y') }}</p>
-                    <div class="d-flex justify-content-center">
-                        <a href="#" class="btn btn-sm btn-outline-primary me-2">
-                            <i class="bi bi-download"></i>
-                        </a>
-                        <button class="btn btn-sm btn-outline-danger">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-3 mb-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-body text-center">
-                    <div class="mb-3">
-                        <i class="bi bi-file-earmark-word text-primary" style="font-size: 48px;"></i>
-                    </div>
-                    <h5 class="card-title">Cours.docx</h5>
-                    <p class="card-text text-muted small">Ajouté le: {{ now.strftime('%d/%m/%Y') }}</p>
-                    <div class="d-flex justify-content-center">
-                        <a href="#" class="btn btn-sm btn-outline-primary me-2">
-                            <i class="bi bi-download"></i>
-                        </a>
-                        <button class="btn btn-sm btn-outline-danger">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-3 mb-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-body text-center">
-                    <div class="mb-3">
-                        <i class="bi bi-file-earmark-excel text-success" style="font-size: 48px;"></i>
-                    </div>
-                    <h5 class="card-title">Notes.xlsx</h5>
-                    <p class="card-text text-muted small">Ajouté le: {{ now.strftime('%d/%m/%Y') }}</p>
-                    <div class="d-flex justify-content-center">
-                        <a href="#" class="btn btn-sm btn-outline-primary me-2">
-                            <i class="bi bi-download"></i>
-                        </a>
-                        <button class="btn btn-sm btn-outline-danger">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-3 mb-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-body text-center">
-                    <div class="mb-3">
+                        {% if document.file_type.startswith('image') %}
                         <i class="bi bi-file-earmark-image text-info" style="font-size: 48px;"></i>
+                        {% elif document.file_type == 'application/pdf' %}
+                        <i class="bi bi-file-earmark-pdf text-danger" style="font-size: 48px;"></i>
+                        {% elif document.file_type in ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword'] %}
+                        <i class="bi bi-file-earmark-word text-primary" style="font-size: 48px;"></i>
+                        {% elif document.file_type in ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'] %}
+                        <i class="bi bi-file-earmark-excel text-success" style="font-size: 48px;"></i>
+                        {% else %}
+                        <i class="bi bi-file-earmark text-secondary" style="font-size: 48px;"></i>
+                        {% endif %}
                     </div>
-                    <h5 class="card-title">Image.jpg</h5>
-                    <p class="card-text text-muted small">Ajouté le: {{ now.strftime('%d/%m/%Y') }}</p>
+                    <h5 class="card-title">{{ document.name }}</h5>
+                    <p class="card-text text-muted small">Ajouté le: {{ document.upload_date.strftime('%d/%m/%Y') }}</p>
                     <div class="d-flex justify-content-center">
-                        <a href="#" class="btn btn-sm btn-outline-primary me-2">
+                        <a href="{{ url_for('download_file_page', file_id=document.id) }}" class="btn btn-sm btn-outline-primary me-2">
                             <i class="bi bi-download"></i>
                         </a>
-                        <button class="btn btn-sm btn-outline-danger">
-                            <i class="bi bi-trash"></i>
-                        </button>
+                        <form action="{{ url_for('delete_file', file_id=document.id) }}" method="POST" style="display: inline;">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
         </div>
+        {% endfor %}
     </div>
 </div>
 
-<!-- Upload Document Modal -->
-<div class="modal fade" id="uploadDocumentModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Télécharger un document</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="uploadDocumentForm">
-                    <div class="mb-3">
-                        <label for="documentFile" class="form-label">Fichier</label>
-                        <input class="form-control" type="file" id="documentFile" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="documentDescription" class="form-label">Description (optionnel)</label>
-                        <textarea class="form-control" id="documentDescription" rows="3"></textarea>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                <button type="submit" form="uploadDocumentForm" class="btn btn-primary">Télécharger</button>
-            </div>
-        </div>
-    </div>
-</div>
+<script>
+    function searchDocuments() {
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        const documents = document.querySelectorAll('#documentsContainer .col-md-3');
+        documents.forEach(doc => {
+            const title = doc.querySelector('.card-title').textContent.toLowerCase();
+            doc.style.display = title.includes(query) ? 'block' : 'none';
+        });
+    }
+
+    // Toggle the upload form icon
+    document.querySelector('[data-target="#uploadDocumentForm"]').addEventListener('click', function() {
+        const icon = this.querySelector('.bi-chevron-down');
+        if (icon.classList.contains('bi-chevron-down')) {
+            icon.classList.replace('bi-chevron-down', 'bi-chevron-up');
+        } else {
+            icon.classList.replace('bi-chevron-up', 'bi-chevron-down');
+        }
+    });
+</script>
 {% endblock %}

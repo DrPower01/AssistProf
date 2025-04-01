@@ -1,6 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-
 db = SQLAlchemy()
 
 class Enseignant(db.Model):
@@ -58,8 +57,8 @@ class Fichier(db.Model):
     tags = db.Column(db.String(255))
     size = db.Column(db.Integer, nullable=False)
     upload_date = db.Column(db.DateTime, default=datetime.utcnow)
-    data = db.Column(db.LargeBinary, nullable=False)  # Stocke le fichier en BLOB
-    ID_EN = db.Column(db.Integer, db.ForeignKey('enseignant.ID_EN'), nullable=False)
+    position = db.Column(db.String(255), nullable=False)  # Store the file as BLOB
+    ID_EN = db.Column(db.Integer, db.ForeignKey('enseignant.ID_EN'), nullable=False)  # Link to Enseignant
 
 def init_db(app):
     from sqlalchemy import create_engine

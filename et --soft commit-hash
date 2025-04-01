@@ -1,0 +1,39 @@
+[33m4f3c246[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Changes to be committed: 	modified:   app.py 	modified:   routes.py
+[33m55b3e74[m Changes to be committed: 	modified:   app.py 	modified:   templates/schedule.html
+[33m3255c29[m Changes to be committed: 	modified:   templates/schedule.html
+[33mf726f2d[m Changes to be committed: 	modified:   app.py 	modified:   templates/schedule.html
+[33m57df9c9[m Changes to be committed: 	modified:   app.py 	modified:   routes.py 	modified:   templates/base.html 	modified:   templates/dashboard.html 	modified:   templates/documents.html 	modified:   templates/notes.html
+[33mf1110f8[m Merge pull request #1 from DrPower01/emploi
+[33m77fd3ea[m[33m ([m[1;31morigin/emploi[m[33m, [m[1;32memploi[m[33m)[m Changes to be committed: 	modified:   app.py 	modified:   models.py 	modified:   routes.py 	modified:   templates/schedule.html 	deleted:    templates/tab_contents/admin.html 	deleted:    templates/tab_contents/documents.html 	deleted:    templates/tab_contents/notes.html 	deleted:    templates/tab_contents/overview.html
+[33m5ebb38e[m Changes to be committed: 	modified:   routes.py 	modified:   templates/base.html
+[33m9e75213[m Changes to be committed: 	modified:   routes.py 	modified:   templates/schedule.html
+[33m09531c0[m Changes to be committed: 	modified:   templates/add_schedule.html 	modified:   templates/connexion.html 	modified:   templates/schedule.html
+[33m92fc934[m Changes to be committed: 	modified:   routes.py 	modified:   templates/add_student.html 	modified:   templates/notes.html 	modified:   templates/search_results.html
+[33m2e65cac[m Changes to be committed: 	modified:   app.py 	modified:   routes.py 	modified:   templates/notes.html 	new file:   templates/search_results.html
+[33ma261488[m Changes to be committed: 	modified:   app.py 	new file:   templates/add_student.html 	modified:   templates/notes.html
+[33mc859e84[m Merge branch 'emploi' of https://github.com/DrPower01/AssistProf into emploi
+[33m9f904a2[m Changes to be committed: 	new file:   Notification.py 	modified:   routes.py 	modified:   templates/add_schedule.html 	modified:   templates/schedule.html
+[33m86b0afe[m Changes to be committed: 	modified:   routes.py 	modified:   templates/schedule.html
+[33mab42212[m Changes to be committed: 	modified:   models.py 	modified:   routes.py 	deleted:    static/css/style.css 	modified:   static/style.css 	modified:   templates/admin.html 	modified:   templates/dashboard.html
+[33m39b234f[m Changes to be committed: 	modified:   models.py
+[33m6946880[m Changes to be committed: 	modified:   app.py 	modified:   models.py 	new file:   routes.py 	deleted:    sidebar-template.html 	new file:   static/css/style.css 	new file:   templates/add_schedule.html 	new file:   templates/admin.html 	new file:   templates/all_schedules.html 	new file:   templates/documents.html 	new file:   templates/notes.html 	new file:   templates/overview.html 	modified:   templates/schedule.html 	new file:   templates/teachers.html
+[33m9d65814[m Changes to be committed: 	modified:   app.py
+[33m44ceaaf[m 	modified:   app.py 	deleted:    templates/admin.html 	modified:   templates/base.html 	modified:   templates/dashboard.html 	deleted:    templates/documents.html 	deleted:    templates/notes.html 	deleted:    templates/overview.html 	new file:   templates/tab_contents/admin.html 	new file:   templates/tab_contents/documents.html 	new file:   templates/tab_contents/notes.html 	new file:   templates/tab_contents/overview.html
+[33mf3af0cc[m Changes to be committed: 	modified:   app.py
+[33maecc9ce[m Changes to be committed: 	modified:   app.py 	new file:   js/sidebar.js 	modified:   requirements.txt 	new file:   sidebar-template.html 	new file:   styles/sidebar.css 	modified:   templates/connexion.html 	modified:   templates/inscription.html 	modified:   templates/verify_otp.html 	new file:   troubleshooting.md
+[33m18a346b[m Changes to be committed: 	modified:   app.py 	new file:   templates/admin.html 	modified:   templates/base.html 	modified:   templates/dashboard.html 	new file:   templates/documents.html 	new file:   templates/notes.html 	new file:   templates/overview.html
+[33m64a8d85[m Changes to be committed: 	modified:   requirements.txt
+[33m7a44e93[m Changes to be committed: 	deleted:    password
+[33mf85cbbf[m Changes to be committed: 	modified:   README.md 	modified:   app.py
+[33m8d3100c[m Changes to be committed: 	modified:   README.md
+[33m47e37f7[m Changes to be committed: 	modified:   README.md
+[33m19a5610[m Changes to be committed: 	modified:   README.md 	modified:   app.py 	deleted:    templates/index.html
+[33ma2a4d67[m Changes to be committed: 	modified:   app.py 	modified:   templates/verify_otp.html
+[33m20260a8[m Changes to be committed: 	modified:   app.py 	modified:   models.py 	new file:   templates/verify_otp.html
+[33mefe6fe2[m Changes to be committed: 	modified:   models.py
+[33m0bfc951[m Changes to be committed: 	modified:   app.py
+[33mdcb6c66[m 	modified:   app.py 	modified:   password
+[33m43ca7ed[m Changes to be committed: 	modified:   app.py 	new file:   models.py 	modified:   templates/index.html
+[33mff11aee[m Changes to be committed: 	modified:   app.py 	new file:   templates/base.html 	new file:   templates/connexion.html 	new file:   templates/dashboard.html 	new file:   templates/inscription.html 	new file:   templates/schedule.html
+[33m1bf79ef[m etape1
+[33mc93c2a3[m Initial commit
