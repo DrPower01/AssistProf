@@ -74,11 +74,15 @@ def signup_route(mail):
                 Prenom_EN=prenom,
                 Email_EN=email,
                 Mot_de_Passe=hashed_password,
-                otp=otp
+                otp=otp,
+                verified=False  # Ensure the user starts unverified
             )
             
             db.session.add(new_user)
             db.session.commit()
+            
+            # Store OTP in session to verify later
+            session['otp'] = otp
             
             email_sent = False
             # Send OTP email
@@ -91,13 +95,11 @@ def signup_route(mail):
                 email_sent = True
             except Exception as e:
                 logger.error(f"Email send error: {e}")
-                # Store the OTP in session for display on the verification page
-                session['display_otp'] = otp
                 session['email_error'] = str(e)
-                flash(f'Could not send verification email. Please use this verification code instead: {otp}')
+                flash('Could not send verification email. Please check the verification page for more information.')
             
-            # Redirect to verification page
-            return redirect(url_for('verify_otp_route', user_id=new_user.ID_EN))
+            # Redirect to verification page with user ID
+            return redirect(url_for('verify_otp', user_id=new_user.ID_EN))
         except Exception as e:
             # Roll back the session
             db.session.rollback()
@@ -119,29 +121,48 @@ def verify_otp_route(user_id):
         flash('Invalid user. Please try signing up again.', 'danger')
         return redirect(url_for('signup'))
     
-    if user.is_verified:
+    # Fix attribute name inconsistency - check if the attribute is verified or is_verified
+    if hasattr(user, 'verified') and user.verified:
         flash('Account already verified. Please log in.', 'info')
         return redirect(url_for('login'))
+    elif hasattr(user, 'is_verified') and user.is_verified:
+        flash('Account already verified. Please log in.', 'info')
+        return redirect(url_for('login'))
+    
+    # Handle email errors
+    email_error = session.get('email_error')
+    display_otp = None
+    
+    # If there was an email error, provide OTP for user
+    if email_error:
+        display_otp = session.get('otp')
     
     if request.method == 'POST':
         submitted_otp = request.form.get('otp')
         stored_otp = session.get('otp')
         
-        if submitted_otp == stored_otp:
+        # Compare with both session OTP and user's stored OTP
+        if submitted_otp == stored_otp or submitted_otp == user.otp:
             # OTP matches, verify the user
-            user.is_verified = True
+            if hasattr(user, 'verified'):
+                user.verified = True
+            elif hasattr(user, 'is_verified'):
+                user.is_verified = True
+                
             db.session.commit()
             
             # Clear OTP from session
             session.pop('otp', None)
+            session.pop('email_error', None)
+            session.pop('display_otp', None)
             
             flash('Account verified successfully! You can now log in.', 'success')
             return redirect(url_for('login'))
         else:
             flash('Invalid verification code. Please try again.', 'danger')
     
-    # Don't show OTP for debugging anymore
-    return render_template('verify_otp.html', user_id=user_id)
+    # Pass error info and optional OTP to template
+    return render_template('verify_otp.html', user_id=user_id, email_error=email_error, display_otp=display_otp)
 
 def logout_route():
     logout_user()

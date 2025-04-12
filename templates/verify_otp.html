@@ -11,6 +11,19 @@
                     <h4 class="mb-0">Vérification du compte</h4>
                 </div>
                 <div class="card-body">
+                    {% if email_error %}
+                    <div class="alert alert-warning">
+                        <h5>Échec d'envoi d'email</h5>
+                        <p>Nous n'avons pas pu envoyer le code par email en raison de l'erreur suivante :</p>
+                        <p><code>{{ email_error }}</code></p>
+                        {% if display_otp %}
+                        <div class="alert alert-info">
+                            <p class="mb-0"><strong>Votre code de vérification est: {{ display_otp }}</strong></p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
                     <form action="{{ url_for('verify_otp', user_id=user_id) }}" method="POST">
                         <div class="form-group">
                             <label for="otp">Code de vérification</label>
