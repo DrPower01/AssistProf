@@ -80,6 +80,7 @@ def signup_route(mail):
             db.session.add(new_user)
             db.session.commit()
             
+            email_sent = False
             # Send OTP email
             try:
                 from flask_mail import Message
@@ -87,10 +88,15 @@ def signup_route(mail):
                 msg.body = f'Your verification code is: {otp}'
                 mail.send(msg)
                 flash('Please check your email for verification code.')
+                email_sent = True
             except Exception as e:
                 logger.error(f"Email send error: {e}")
-                flash(f'Could not send verification email: {str(e)}')
+                # Store the OTP in session for display on the verification page
+                session['display_otp'] = otp
+                session['email_error'] = str(e)
+                flash(f'Could not send verification email. Please use this verification code instead: {otp}')
             
+            # Redirect to verification page
             return redirect(url_for('verify_otp', user_id=new_user.ID_EN))
         except Exception as e:
             # Roll back the session
@@ -119,6 +125,13 @@ def verify_otp_route(user_id):
             user.verified = True
             user.otp = None  # Clear OTP after verification
             db.session.commit()
+            
+            # Clear session OTP data if it exists
+            if 'display_otp' in session:
+                session.pop('display_otp', None)
+            if 'email_error' in session:
+                session.pop('email_error', None)
+                
             flash('Email verified successfully. Please login.')
             return redirect(url_for('login'))
         else:

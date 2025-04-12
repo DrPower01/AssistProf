@@ -18,14 +18,24 @@
                         {% with messages = get_flashed_messages(with_categories=true) %}
                             {% if messages %}
                                 {% for category, message in messages %}
-                                <div class="alert alert-{{ category }}">{{ message }}</div>
+                                <div class="alert alert-{{ category if category else 'info' }}">{{ message }}</div>
                                 {% endfor %}
                             {% endif %}
                         {% endwith %}
                         
                         <div class="text-center mb-4">
-                            <p>Un code de vérification à 6 chiffres a été envoyé à votre adresse email.</p>
-                            <p>Veuillez entrer ce code ci-dessous pour vérifier votre compte.</p>
+                            {% if session.get('display_otp') %}
+                                <div class="alert alert-warning">
+                                    <h4>Échec d'envoi d'email</h4>
+                                    <p>Nous n'avons pas pu envoyer le code par email en raison de l'erreur suivante :</p>
+                                    <p class="text-danger">{{ session.get('email_error') }}</p>
+                                    <hr>
+                                    <p class="mb-0">Votre code de vérification est: <strong class="fs-4">{{ session.get('display_otp') }}</strong></p>
+                                </div>
+                            {% else %}
+                                <p>Un code de vérification à 6 chiffres a été envoyé à votre adresse email.</p>
+                                <p>Veuillez entrer ce code ci-dessous pour vérifier votre compte.</p>
+                            {% endif %}
                         </div>
                         
                         <form method="POST" action="{{ url_for('verify_otp', user_id=user_id) }}">
@@ -33,6 +43,7 @@
                                 <label for="otp" class="form-label">Code de vérification</label>
                                 <input type="text" class="form-control form-control-lg text-center" 
                                        id="otp" name="otp" placeholder="123456" 
+                                       {% if session.get('display_otp') %}value="{{ session.get('display_otp') }}"{% endif %}
                                        maxlength="6" inputmode="numeric" required>
                             </div>
                             <div class="d-grid gap-2">
