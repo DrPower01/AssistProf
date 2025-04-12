@@ -1,0 +1,738 @@
+{% extends "base.html" %}
+
+{% block title %}FAQ - Assistance Intelligente{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-lg-6">
+            <h2 class="mb-4">Foire Aux Questions</h2>
+            <div class="accordion mb-5" id="faqAccordion">
+                {% for item in faq_data %}
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading{{ loop.index }}">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#collapse{{ loop.index }}" aria-expanded="false"
+                            aria-controls="collapse{{ loop.index }}">
+                            {{ item.question }}
+                        </button>
+                    </h2>
+                    <div id="collapse{{ loop.index }}" class="accordion-collapse collapse"
+                        aria-labelledby="heading{{ loop.index }}" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            {{ item.answer }}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="h5 mb-0">Vous ne trouvez pas votre réponse?</h3>
+                </div>
+                <div class="card-body">
+                    <p>Utilisez notre chatbot intelligent pour obtenir des réponses instantanées à vos questions, ou consultez la documentation complète.</p>
+                    <a href="#chatbot-container" class="btn btn-primary me-2">Discuter avec l'assistant</a>
+                    <a href="#" class="btn btn-outline-secondary">Documentation</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6" id="chatbot-container">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h3 class="h5 mb-0">Assistant Virtuel</h3>
+                    <div>
+                        <button id="switchBot" class="btn btn-sm btn-info mr-2">Switch to HappyFace AI</button>
+                        <button id="resetChat" class="btn btn-sm btn-outline-light">Nouvelle conversation</button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div id="chat-messages" class="p-3" style="height: 400px; overflow-y: auto;">
+                        <div class="message bot">
+                            <div class="message-content">
+                                <p>Bonjour! Je suis votre assistant virtuel. Comment puis-je vous aider aujourd'hui?</p>
+                                <p>Vous pouvez me poser des questions sur:</p>
+                                <ul>
+                                    <li>L'ajout ou la modification d'étudiants</li>
+                                    <li>La gestion de votre emploi du temps</li>
+                                    <li>Le calcul des notes et des moyennes</li>
+                                    <li>Le partage de documents</li>
+                                    <li>Et bien plus encore!</li>
+                                </ul>
+                            </div>
+                            <small class="text-muted">Assistant <span class="bot-type">(Standard)</span></small>
+                        </div>
+                    </div>
+                    <div class="p-3 border-top">
+                        <form id="chatForm" class="d-flex">
+                            <input type="text" id="userMessage" class="form-control me-2" 
+                                   placeholder="Posez votre question ici..." autocomplete="off" required>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </form>
+                        <div class="mt-2 text-center">
+                            <div class="quick-questions">
+                                <button class="btn btn-sm btn-outline-secondary me-1 mb-1 quick-question">Comment ajouter un étudiant?</button>
+                                <button class="btn btn-sm btn-outline-secondary me-1 mb-1 quick-question">Comment calculer les moyennes?</button>
+                                <button class="btn btn-sm btn-outline-secondary me-1 mb-1 quick-question">Comment modifier mon emploi du temps?</button>
+                                <button class="btn btn-sm btn-outline-secondary me-1 mb-1 quick-question">Comment recevoir des rappels?</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .message {
+        margin-bottom: 15px;
+        max-width: 80%;
+        clear: both;
+    }
+    
+    .message.user {
+        float: right;
+    }
+    
+    .message.bot {
+        float: left;
+    }
+    
+    .message-content {
+        padding: 10px 15px;
+        border-radius: 15px;
+        display: inline-block;
+    }
+    
+    .message.user .message-content {
+        background-color: #007bff;
+        color: white;
+        border-top-right-radius: 0;
+    }
+    
+    .message.bot .message-content {
+        background-color: #f0f2f5;
+        color: #212529;
+        border-top-left-radius: 0;
+    }
+    
+    .message small {
+        display: block;
+        margin-top: 5px;
+        font-size: 0.75rem;
+    }
+    
+    .message.user small {
+        text-align: right;
+    }
+    
+    /* Add typing animation */
+    .typing {
+        display: inline-block;
+        width: 50px;
+        height: 12px;
+    }
+    
+    .typing-dot {
+        float: left;
+        width: 8px;
+        height: 8px;
+        margin: 0 4px;
+        background: #8d8d8d;
+        border-radius: 50%;
+        opacity: 0;
+        animation: loadingFade 1s infinite;
+    }
+    
+    .typing-dot:nth-child(1) {
+        animation-delay: 0s;
+    }
+    
+    .typing-dot:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+    
+    .typing-dot:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+    
+    @keyframes loadingFade {
+        0% { opacity: 0; }
+        50% { opacity: 0.8; }
+        100% { opacity: 0; }
+    }
+    
+    /* Clear floats after messages */
+    #chat-messages::after {
+        content: "";
+        clear: both;
+        display: table;
+    }
+    
+    /* Fix Bootstrap 5 accordion styles for Bootstrap 4 */
+    .accordion-button {
+        position: relative;
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 1rem 1.25rem;
+        font-size: 1rem;
+        color: #212529;
+        text-align: left;
+        background-color: #fff;
+        border: 0;
+        border-radius: 0;
+        overflow-anchor: none;
+        transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out, border-radius 0.15s ease;
+    }
+    
+    .accordion-button:not(.collapsed) {
+        color: #0c63e4;
+        background-color: #e7f1ff;
+    }
+    
+    .accordion-button.collapsed::after {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23212529'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+        transform: rotate(-90deg);
+    }
+    
+    .accordion-button::after {
+        flex-shrink: 0;
+        width: 1.25rem;
+        height: 1.25rem;
+        margin-left: auto;
+        content: "";
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23212529'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-size: 1.25rem;
+        transition: transform 0.2s ease-in-out;
+    }
+    
+    .accordion-item {
+        background-color: #fff;
+        border: 1px solid rgba(0,0,0,.125);
+    }
+    
+    .accordion-item:first-of-type {
+        border-top-left-radius: 0.25rem;
+        border-top-right-radius: 0.25rem;
+    }
+    
+    .accordion-item:last-of-type {
+        border-bottom-right-radius: 0.25rem;
+        border-bottom-left-radius: 0.25rem;
+    }
+    
+    .accordion-collapse {
+        border: 0;
+    }
+    
+    .accordion-body {
+        padding: 1rem 1.25rem;
+    }
+    
+    /* Add styling for bot type indicator */
+    .bot-type {
+        font-size: 0.7rem;
+        opacity: 0.8;
+        font-style: italic;
+    }
+    
+    /* Add styling for the bot switch button */
+    #switchBot {
+        transition: all 0.3s ease;
+    }
+    
+    #switchBot.active {
+        background-color: #17a2b8;
+        color: white;
+    }
+    
+    #switchBot.inactive {
+        background-color: #6c757d;
+        color: white;
+    }
+    
+    /* Add loading animation for API requests */
+    .api-loading {
+        display: inline-block;
+        position: relative;
+        width: 80px;
+        height: 20px;
+    }
+    
+    .api-loading div {
+        position: absolute;
+        top: 8px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #3949ab;
+        animation-timing-function: cubic-bezier(0, 1, 1, 0);
+    }
+    
+    .api-loading div:nth-child(1) {
+        left: 8px;
+        animation: api-loading1 0.6s infinite;
+    }
+    
+    .api-loading div:nth-child(2) {
+        left: 8px;
+        animation: api-loading2 0.6s infinite;
+    }
+    
+    .api-loading div:nth-child(3) {
+        left: 32px;
+        animation: api-loading2 0.6s infinite;
+    }
+    
+    .api-loading div:nth-child(4) {
+        left: 56px;
+        animation: api-loading3 0.6s infinite;
+    }
+    
+    @keyframes api-loading1 {
+        0% {transform: scale(0);}
+        100% {transform: scale(1);}
+    }
+    
+    @keyframes api-loading3 {
+        0% {transform: scale(1);}
+        100% {transform: scale(0);}
+    }
+    
+    @keyframes api-loading2 {
+        0% {transform: translate(0, 0);}
+        100% {transform: translate(24px, 0);}
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const chatMessages = document.getElementById('chat-messages');
+        const userMessageInput = document.getElementById('userMessage');
+        const chatForm = document.getElementById('chatForm');
+        const resetChatButton = document.getElementById('resetChat');
+        const switchBotButton = document.getElementById('switchBot');
+        const quickQuestions = document.querySelectorAll('.quick-question');
+        
+        // Bot state
+        let usingHappyFaceAI = false;
+        
+        // FAQ database - this matches our Python data but is needed for client-side functionality
+        const faqData = [
+            {
+                question: "Comment ajouter un étudiant?",
+                answer: "Pour ajouter un étudiant, allez à la page de notation, puis cliquez sur le bouton 'Ajouter un étudiant' et remplissez le formulaire avec les détails de l'étudiant."
+            },
+            {
+                question: "Comment importer plusieurs étudiants à la fois?",
+                answer: "Vous pouvez importer des étudiants en utilisant un fichier CSV. Sur la page de notation, cliquez sur 'Importer CSV' et téléchargez votre fichier. Assurez-vous que le CSV contient les colonnes: matricule, nom_complet, année, département, matière, note_tp, note_cc, note_cf, note_projet."
+            },
+            {
+                question: "Comment modifier mon emploi du temps?",
+                answer: "Allez à la page 'Emploi du temps', puis vous pouvez ajouter de nouveaux événements en cliquant sur 'Ajouter un cours'. Vous pouvez également modifier les événements existants en les faisant glisser vers un nouvel horaire ou en cliquant dessus pour les éditer."
+            },
+            {
+                question: "Comment calculer les moyennes?",
+                answer: "Les moyennes sont calculées automatiquement selon la formule suivante: 30% TP + 20% CC + 50% CF. Si un projet est inclus, la formule devient: 20% TP + 20% CC + 40% CF + 20% Projet."
+            },
+            {
+                question: "Comment télécharger ou partager des documents?",
+                answer: "Allez à la page 'Documents', puis cliquez sur 'Télécharger un document'. Vous pouvez ensuite remplir les détails du document et télécharger votre fichier. Pour partager, utilisez le lien généré après le téléchargement."
+            },
+            {
+                question: "Comment recevoir des rappels pour mes cours?",
+                answer: "Les rappels sont envoyés automatiquement chaque jour où vous avez des cours. Vous recevrez des notifications dans l'application et également par email si vous avez configuré votre adresse email."
+            },
+            {
+                question: "Comment réinitialiser mon mot de passe?",
+                answer: "Sur la page de connexion, cliquez sur 'Mot de passe oublié?' et suivez les instructions pour réinitialiser votre mot de passe. Un email avec des instructions sera envoyé à l'adresse associée à votre compte."
+            },
+            {
+                question: "Comment ajouter ou modifier des notes d'étudiants?",
+                answer: "Sur la page de notation, recherchez l'étudiant par son matricule ou son nom. Ensuite, cliquez sur l'icône d'édition à côté de son nom pour modifier ses notes. Les moyennes seront recalculées automatiquement."
+            }
+        ];
+        
+        // Fallback responses when no match is found
+        const fallbackResponses = [
+            "Je n'ai pas de réponse précise à cette question. Pourriez-vous reformuler ou poser une autre question?",
+            "Je ne suis pas sûr de comprendre. Pouvez-vous poser votre question différemment?",
+            "Cette question semble en dehors de mon domaine d'expertise. Puis-je vous aider avec autre chose?",
+            "Je n'ai pas d'information spécifique sur ce sujet. Avez-vous d'autres questions sur l'utilisation du système?",
+            "Je ne peux pas répondre à cette question pour le moment. Essayez de consulter la documentation ou contactez l'administrateur."
+        ];
+        
+        // Function to add a user message to the chat
+        function addUserMessage(message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message user';
+            messageDiv.innerHTML = `
+                <div class="message-content">${message}</div>
+                <small class="text-muted">Vous</small>
+            `;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Function to add a bot message to the chat
+        function addBotMessage(message, isLoadingFromAPI = false) {
+            // First add a typing indicator
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message bot typing-indicator';
+            
+            if (isLoadingFromAPI) {
+                typingDiv.innerHTML = `
+                    <div class="message-content">
+                        <div class="api-loading">
+                            <div></div><div></div><div></div><div></div>
+                        </div>
+                        <p class="mt-2 small text-muted">Interrogation de l'IA avancée...</p>
+                    </div>
+                `;
+            } else {
+                typingDiv.innerHTML = `
+                    <div class="message-content">
+                        <div class="typing">
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            chatMessages.appendChild(typingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // Then replace with actual message after a delay
+            const delay = isLoadingFromAPI ? 2000 : 1000; // Longer delay for API responses to seem more realistic
+            
+            setTimeout(() => {
+                chatMessages.removeChild(typingDiv);
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message bot';
+                messageDiv.innerHTML = `
+                    <div class="message-content">${message}</div>
+                    <small class="text-muted">Assistant <span class="bot-type">${usingHappyFaceAI ? '(HappyFace AI)' : '(Standard)'}</span></small>
+                `;
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }, delay);
+        }
+        
+        // Function to find the best match for a user query with the basic bot
+        function findBestMatch(query) {
+            query = query.toLowerCase();
+            let bestMatch = null;
+            let highestScore = 0;
+            
+            // Simple matching algorithm - can be improved with more sophisticated NLP
+            faqData.forEach(item => {
+                // Check for exact matches first
+                if (item.question.toLowerCase() === query) {
+                    return item.answer;
+                }
+                
+                // Calculate a simple match score
+                const questionWords = item.question.toLowerCase().split(/\s+/);
+                const queryWords = query.split(/\s+/);
+                
+                let matchCount = 0;
+                queryWords.forEach(word => {
+                    if (word.length > 2 && questionWords.some(qWord => qWord.includes(word) || word.includes(qWord))) {
+                        matchCount++;
+                    }
+                });
+                
+                const score = matchCount / queryWords.length;
+                
+                if (score > highestScore && score > 0.3) { // 30% threshold
+                    highestScore = score;
+                    bestMatch = item;
+                }
+            });
+            
+            // If good match found, return the answer
+            if (bestMatch) {
+                return bestMatch.answer;
+            }
+            
+            // Otherwise return a random fallback response
+            return fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)];
+        }
+        
+        // Function to query the HappyFace AI API
+        async function queryHappyFaceAI(message) {
+            try {
+                // Simulate API call with a delay (replace this with actual API call)
+                return new Promise((resolve) => {
+                    setTimeout(() => {
+                        // Generate a more sophisticated response based on the message
+                        let response = "";
+                        const lowercaseMessage = message.toLowerCase();
+                        
+                        // Check for specific keywords and generate appropriate responses
+                        if (lowercaseMessage.includes("étudiant") && 
+                            (lowercaseMessage.includes("ajouter") || lowercaseMessage.includes("nouveau"))) {
+                            response = `<p>Pour ajouter un nouvel étudiant dans le système:</p>
+                                <ol>
+                                    <li>Accédez à la page de <strong>Notes</strong> depuis le menu principal</li>
+                                    <li>Cliquez sur le bouton <strong>+ Ajouter un étudiant</strong> en haut de la liste</li>
+                                    <li>Remplissez le formulaire avec les informations requises:
+                                        <ul>
+                                            <li>Matricule (identifiant unique)</li>
+                                            <li>Nom complet</li>
+                                            <li>Département et année d'étude</li>
+                                            <li>Notes (TP, CC, CF, Projet) si disponibles</li>
+                                        </ul>
+                                    </li>
+                                    <li>Cliquez sur <strong>Enregistrer</strong> pour finaliser l'ajout</li>
+                                </ol>
+                                <p>Les moyennes sont automatiquement calculées selon les coefficients configurés.</p>`;
+                        }
+                        else if (lowercaseMessage.includes("moyenne") || 
+                                 lowercaseMessage.includes("calcul") ||
+                                 lowercaseMessage.includes("note")) {
+                            response = `<p>Le système de calcul des moyennes fonctionne comme suit:</p>
+                                <ul>
+                                    <li><strong>Sans projet:</strong> La moyenne est calculée selon la formule: 
+                                    <code>Moyenne = 30% × TP + 20% × CC + 50% × CF</code></li>
+                                    <li><strong>Avec projet:</strong> La formule devient: 
+                                    <code>Moyenne = 20% × TP + 20% × CC + 40% × CF + 20% × Projet</code></li>
+                                </ul>
+                                <p>Les notes sont sur 20 points. Une moyenne de 10/20 ou plus est requise pour valider le module.</p>
+                                <p>Vous pouvez modifier les coefficients dans les paramètres si votre établissement utilise une pondération différente.</p>`;
+                        }
+                        else if (lowercaseMessage.includes("emploi") || 
+                                 lowercaseMessage.includes("temps") ||
+                                 lowercaseMessage.includes("horaire") ||
+                                 lowercaseMessage.includes("cours")) {
+                            response = `<p>Pour gérer votre emploi du temps:</p>
+                                <ol>
+                                    <li>Accédez à la page <strong>Emploi du temps</strong> dans le menu principal</li>
+                                    <li>Pour ajouter un cours:
+                                        <ul>
+                                            <li>Cliquez sur <strong>+ Ajouter un cours</strong></li>
+                                            <li>Renseignez le type de cours, la filière, le groupe, etc.</li>
+                                            <li>Sélectionnez le jour et l'horaire</li>
+                                            <li>Validez pour ajouter à votre planning</li>
+                                        </ul>
+                                    </li>
+                                    <li>Pour modifier un cours existant:
+                                        <ul>
+                                            <li>Cliquez directement sur le cours dans la grille</li>
+                                            <li>Ou faites-le glisser vers un nouvel horaire</li>
+                                        </ul>
+                                    </li>
+                                    <li>Les cours sont automatiquement synchronisés avec le système de rappels</li>
+                                </ol>
+                                <p>Vous recevrez des notifications par email et dans l'application pour vous rappeler vos cours du jour.</p>`;
+                        }
+                        else if (lowercaseMessage.includes("document") || 
+                                 lowercaseMessage.includes("fichier") ||
+                                 lowercaseMessage.includes("partage") ||
+                                 lowercaseMessage.includes("télécharger")) {
+                            response = `<p>Gestion des documents pédagogiques:</p>
+                                <ol>
+                                    <li>Accédez à l'espace <strong>Documents</strong> depuis le menu</li>
+                                    <li>Pour ajouter un document:
+                                        <ul>
+                                            <li>Cliquez sur <strong>Télécharger un document</strong></li>
+                                            <li>Sélectionnez la catégorie appropriée (cours, TD, examen, etc.)</li>
+                                            <li>Ajoutez une description pour faciliter la recherche</li>
+                                            <li>Sélectionnez le fichier à télécharger (max 10MB)</li>
+                                        </ul>
+                                    </li>
+                                    <li>Pour partager un document:
+                                        <ul>
+                                            <li>Cliquez sur l'icône de partage à côté du document</li>
+                                            <li>Copiez le lien généré ou utilisez les options de partage</li>
+                                            <li>Vous pouvez également définir une date d'expiration pour l'accès</li>
+                                        </ul>
+                                    </li>
+                                </ol>
+                                <p>Formats acceptés: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT, et images.</p>`;
+                        }
+                        else if (lowercaseMessage.includes("rappel") || 
+                                 lowercaseMessage.includes("notification") ||
+                                 lowercaseMessage.includes("alerte")) {
+                            response = `<p>Le système de rappels et notifications fonctionne automatiquement:</p>
+                                <ul>
+                                    <li>À chaque connexion, vous recevez un résumé de votre emploi du temps du jour</li>
+                                    <li>Chaque matin, un email récapitulatif est envoyé à l'adresse associée à votre compte</li>
+                                    <li>30 minutes avant un cours, vous recevez une notification dans l'application</li>
+                                    <li>Les rappels incluent:
+                                        <ul>
+                                            <li>Type de cours et matière</li>
+                                            <li>Horaire et salle</li>
+                                            <li>Groupe d'étudiants concerné</li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                                <p>Vous pouvez personnaliser vos préférences de notifications dans les paramètres de votre profil:</p>
+                                <ul>
+                                    <li>Activer/désactiver les emails</li>
+                                    <li>Modifier le délai des rappels (15min, 30min, 1h avant)</li>
+                                    <li>Choisir les types d'événements pour lesquels recevoir des rappels</li>
+                                </ul>`;
+                        }
+                        else if (lowercaseMessage.includes("mot de passe") || 
+                                 lowercaseMessage.includes("connexion") ||
+                                 lowercaseMessage.includes("compte")) {
+                            response = `<p>Gestion de votre compte et authentification:</p>
+                                <ul>
+                                    <li><strong>Mot de passe oublié:</strong>
+                                        <ol>
+                                            <li>Sur l'écran de connexion, cliquez sur "Mot de passe oublié"</li>
+                                            <li>Entrez votre email professionnel</li>
+                                            <li>Un lien de réinitialisation valide 24h vous sera envoyé</li>
+                                            <li>Suivez les instructions dans l'email pour définir un nouveau mot de passe</li>
+                                        </ol>
+                                    </li>
+                                    <li><strong>Modifier votre mot de passe:</strong>
+                                        <ol>
+                                            <li>Connectez-vous à votre compte</li>
+                                            <li>Accédez à votre profil en cliquant sur votre nom en haut à droite</li>
+                                            <li>Sélectionnez "Paramètres du compte"</li>
+                                            <li>Dans la section "Sécurité", cliquez sur "Modifier le mot de passe"</li>
+                                        </ol>
+                                    </li>
+                                </ul>
+                                <p>Pour des raisons de sécurité, votre session expire après 30 minutes d'inactivité.</p>`;
+                        }
+                        else {
+                            // Generate a more contextual response for other queries
+                            const contextResponses = [
+                                `<p>Je comprends que vous vous renseignez sur "${message}". D'après ma base de connaissances:</p>
+                                <p>La plateforme AssistProf est conçue pour optimiser la gestion des tâches administratives et pédagogiques des enseignants. Votre question semble porter sur un aspect spécifique que je n'ai pas dans ma base de données actuelle.</p>
+                                <p>Je vous suggère de:</p>
+                                <ul>
+                                    <li>Consulter la section Documentation pour des informations plus détaillées</li>
+                                    <li>Contacter l'assistance technique via le formulaire dans Paramètres > Support</li>
+                                    <li>Poser une question plus précise pour que je puisse mieux vous aider</li>
+                                </ul>`,
+                                
+                                `<p>Concernant votre question sur "${message}", voici ce que je peux vous dire:</p>
+                                <p>AssistProf offre de nombreuses fonctionnalités pour faciliter votre travail d'enseignant. Votre demande semble concerner un aspect qui nécessite plus de contexte.</p>
+                                <p>Puis-je vous suggérer d'explorer:</p>
+                                <ul>
+                                    <li>Les tutoriels vidéo disponibles dans la section Aide</li>
+                                    <li>Les webinaires de formation mensuels (calendrier dans Ressources > Formation)</li>
+                                    <li>Le guide utilisateur complet téléchargeable en PDF</li>
+                                </ul>`,
+                                
+                                `<p>À propos de "${message}":</p>
+                                <p>Cette fonctionnalité pourrait être disponible dans une prochaine mise à jour. L'équipe de développement d'AssistProf travaille constamment à l'amélioration de la plateforme en fonction des retours des utilisateurs.</p>
+                                <p>N'hésitez pas à:</p>
+                                <ul>
+                                    <li>Soumettre votre suggestion via le formulaire de feedback</li>
+                                    <li>Vérifier les notes de version pour les dernières fonctionnalités</li>
+                                    <li>Participer au programme bêta pour tester les nouvelles fonctionnalités</li>
+                                </ul>`
+                            ];
+                            
+                            response = contextResponses[Math.floor(Math.random() * contextResponses.length)];
+                        }
+                        
+                        resolve(response);
+                    }, 2000); // Simulate API delay
+                });
+            } catch (error) {
+                console.error("Error querying HappyFace AI:", error);
+                return "Désolé, je n'ai pas pu obtenir de réponse de notre service IA. Veuillez réessayer plus tard ou poser une autre question.";
+            }
+        }
+        
+        // Function to process user message and get response
+        async function processUserMessage(message) {
+            if (usingHappyFaceAI) {
+                // Use HappyFace AI for more sophisticated responses
+                return await queryHappyFaceAI(message);
+            } else {
+                // Use simple matching algorithm
+                return findBestMatch(message);
+            }
+        }
+        
+        // Handle form submission
+        chatForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const userMessage = userMessageInput.value.trim();
+            
+            if (userMessage) {
+                // Add the user message to the chat
+                addUserMessage(userMessage);
+                
+                // Process the message and generate a response
+                if (usingHappyFaceAI) {
+                    // Show loading animation for API
+                    const botResponse = await processUserMessage(userMessage);
+                    addBotMessage(botResponse, true);
+                } else {
+                    const botResponse = processUserMessage(userMessage);
+                    addBotMessage(botResponse);
+                }
+                
+                // Clear the input
+                userMessageInput.value = '';
+            }
+        });
+        
+        // Handle quick question buttons
+        quickQuestions.forEach(button => {
+            button.addEventListener('click', function() {
+                const question = this.textContent;
+                userMessageInput.value = question;
+                chatForm.dispatchEvent(new Event('submit'));
+            });
+        });
+        
+        // Reset chat button functionality
+        resetChatButton.addEventListener('click', function() {
+            // Clear all messages except the initial greeting
+            while (chatMessages.childNodes.length > 1) {
+                chatMessages.removeChild(chatMessages.lastChild);
+            }
+            userMessageInput.value = '';
+        });
+        
+        // Switch bot functionality
+        switchBotButton.addEventListener('click', function() {
+            usingHappyFaceAI = !usingHappyFaceAI;
+            
+            if (usingHappyFaceAI) {
+                switchBotButton.textContent = "Switch to Standard Bot";
+                switchBotButton.classList.remove('btn-info');
+                switchBotButton.classList.add('btn-secondary');
+                
+                // Add message about switching to advanced AI
+                addBotMessage(`<p>Vous utilisez maintenant l'assistant alimenté par HappyFace AI.</p>
+                <p>Je peux répondre à vos questions de manière plus détaillée et comprendre le contexte avec une meilleure précision.</p>
+                <p>Comment puis-je vous aider aujourd'hui?</p>`, true);
+            } else {
+                switchBotButton.textContent = "Switch to HappyFace AI";
+                switchBotButton.classList.remove('btn-secondary');
+                switchBotButton.classList.add('btn-info');
+                
+                // Add message about switching back to standard bot
+                addBotMessage(`<p>Vous êtes revenu à l'assistant standard.</p>
+                <p>Je peux toujours répondre à vos questions fréquentes. N'hésitez pas à me demander de l'aide!</p>`);
+            }
+        });
+        
+        // Initialize accordion functionality (since we're using Bootstrap 4)
+        $('.accordion-button').on('click', function() {
+            $(this).toggleClass('collapsed');
+            const target = $(this).attr('data-bs-target') || $(this).attr('data-target');
+            $(target).toggleClass('show');
+        });
+    });
+</script>
+{% endblock %}

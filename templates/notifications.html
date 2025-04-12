@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-8">
+            <h2>Notifications</h2>
+            <p class="text-muted">View all your notifications and reminders</p>
+        </div>
+        <div class="col-md-4 text-right">
+            <button id="markAllReadBtn" class="btn btn-outline-primary">
+                <i class="fas fa-check-double mr-2"></i> Mark all as read
+            </button>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body p-0">
+            {% if notifications %}
+                <div class="notification-list">
+                    {% for notification in notifications %}
+                        <div class="notification-item {% if not notification.is_read %}unread{% endif %}" data-id="{{ notification.id }}">
+                            <div class="notification-icon">
+                                {% if notification.type == 'schedule' %}
+                                    <i class="fas fa-calendar-alt"></i>
+                                {% else %}
+                                    <i class="fas fa-bell"></i>
+                                {% endif %}
+                            </div>
+                            <div class="notification-content">
+                                <div class="notification-title">{{ notification.title }}</div>
+                                <div class="notification-message">{{ notification.message }}</div>
+                                <div class="notification-time">{{ notification.created_at.strftime('%B %d, %Y at %H:%M') }}</div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
+                    <h5>No notifications yet</h5>
+                    <p class="text-muted">When you receive notifications, they'll appear here</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Mark individual notification as read
+    document.querySelectorAll('.notification-item.unread').forEach(item => {
+        item.addEventListener('click', function() {
+            const notificationId = this.getAttribute('data-id');
+            
+            fetch(`/notifications/mark-read/${notificationId}`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    this.classList.remove('unread');
+                }
+            });
+        });
+    });
+    
+    // Mark all notifications as read
+    document.getElementById('markAllReadBtn').addEventListener('click', function() {
+        fetch('/notifications/mark-all-read', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                document.querySelectorAll('.notification-item.unread').forEach(item => {
+                    item.classList.remove('unread');
+                });
+            }
+        });
+    });
+});
+</script>
+
+<style>
+.notification-list {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    padding: 16px 20px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.notification-item:hover {
+    background-color: #f9f9f9;
+}
+
+.notification-item.unread {
+    background-color: #e8f4fd;
+}
+
+.notification-item .notification-icon {
+    width: 36px;
+    height: 36px;
+    background-color: #e9ecef;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 16px;
+    flex-shrink: 0;
+}
+
+.notification-item.unread .notification-icon {
+    background-color: #3949ab;
+    color: white;
+}
+
+.notification-content {
+    flex-grow: 1;
+}
+
+.notification-title {
+    font-weight: 600;
+    margin-bottom: 5px;
+    font-size: 0.95rem;
+}
+
+.notification-message {
+    font-size: 0.9rem;
+    color: #555;
+    margin-bottom: 5px;
+}
+
+.notification-time {
+    font-size: 0.8rem;
+    color: #888;
+}
+</style>
+{% endblock %}

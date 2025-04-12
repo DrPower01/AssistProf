@@ -1,0 +1,439 @@
+{% extends 'base.html' %}
+
+{% block title %}Système de Notes{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Add Student Form -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Ajouter un Nouvel Étudiant</h5>
+                </div>
+                <div class="card-body">
+                    <form id="addStudentForm">
+                        <div class="mb-3">
+                            <label for="matricule" class="form-label">Matricule</label>
+                            <input type="text" class="form-control" id="matricule" name="matricule" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="nom_complet" class="form-label">Nom Complet</label>
+                            <input type="text" class="form-control" id="nom_complet" name="nom_complet" required>
+                        </div>
+                        <!-- New fields added here -->
+                        <div class="mb-3">
+                            <label for="year" class="form-label">Année Académique</label>
+                            <input type="text" class="form-control" id="year" name="year">
+                        </div>
+                        <div class="mb-3">
+                            <label for="departement" class="form-label">Département</label>
+                            <input type="text" class="form-control" id="departement" name="departement">
+                        </div>
+                        <div class="mb-3">
+                            <label for="subject" class="form-label">Matière</label>
+                            <input type="text" class="form-control" id="subject" name="subject">
+                        </div>
+                        <!-- End of new fields -->
+                        <div class="mb-3">
+                            <label for="note_tp" class="form-label">Note TP</label>
+                            <input type="number" class="form-control" id="note_tp" name="note_tp" min="0" max="20" step="0.01">
+                        </div>
+                        <div class="mb-3">
+                            <label for="note_cc" class="form-label">Note CC</label>
+                            <input type="number" class="form-control" id="note_cc" name="note_cc" min="0" max="20" step="0.01">
+                        </div>
+                        <div class="mb-3">
+                            <label for="note_cf" class="form-label">Note CF</label>
+                            <input type="number" class="form-control" id="note_cf" name="note_cf" min="0" max="20" step="0.01">
+                        </div>
+                        <div class="mb-3">
+                            <label for="note_projet" class="form-label">Note Projet</label>
+                            <input type="number" class="form-control" id="note_projet" name="note_projet" min="0" max="20" step="0.01">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Ajouter l'Étudiant</button>
+                    </form>
+                    
+                    <!-- Import/Export Section -->
+                    <div class="mt-4">
+                        <h6 class="mb-3">Options d'Import/Export</h6>
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#importModal">
+                                <i class="bi bi-upload"></i> Importer des Étudiants (CSV)
+                            </button>
+                            <button type="button" class="btn btn-outline-success" id="exportBtn">
+                                <i class="bi bi-download"></i> Exporter les Étudiants (CSV)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Student List -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Liste des Étudiants</h5>
+                    <div class="input-group" style="max-width: 300px;">
+                        <input type="text" id="searchInput" class="form-control" placeholder="Rechercher des étudiants...">
+                        <button class="btn btn-outline-secondary" type="button" id="searchButton">Rechercher</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Matricule</th>
+                                    <th>Nom</th>
+                                    <th>Année</th>
+                                    <th>Département</th>
+                                    <th>Matière</th>
+                                    <th>TP</th>
+                                    <th>CC</th>
+                                    <th>CF</th>
+                                    <th>Projet</th>
+                                    <th>Moyenne</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="studentsList">
+                                {% for student in students %}
+                                <tr id="student-{{ student.Matricule_ET }}">
+                                    <td>{{ student.Matricule_ET }}</td>
+                                    <td>{{ student.Nom_ET_complet }}</td>
+                                    <td>{{ student.year or '-' }}</td>
+                                    <td>{{ student.Departement or '-' }}</td>
+                                    <td>{{ student.subject or '-' }}</td>
+                                    <td>{{ student.Note_TP or '-' }}</td>
+                                    <td>{{ student.Note_CC or '-' }}</td>
+                                    <td>{{ student.Note_CF or '-' }}</td>
+                                    <td>{{ student.Note_Projet or '-' }}</td>
+                                    <td>{{ student.Moyen or '-' }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary edit-btn" data-matricule="{{ student.Matricule_ET }}">Modifier</button>
+                                        <button class="btn btn-sm btn-danger delete-btn" data-matricule="{{ student.Matricule_ET }}">Supprimer</button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Student Modal -->
+<div class="modal fade" id="editStudentModal" tabindex="-1" aria-labelledby="editStudentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editStudentModalLabel">Modifier les Notes de l'Étudiant</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editStudentForm">
+                    <input type="hidden" id="edit_matricule" name="matricule">
+                    <div class="mb-3">
+                        <label for="edit_note_tp" class="form-label">Note TP</label>
+                        <input type="number" class="form-control" id="edit_note_tp" name="note_tp" min="0" max="20" step="0.01">
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_note_cc" class="form-label">Note CC</label>
+                        <input type="number" class="form-control" id="edit_note_cc" name="note_cc" min="0" max="20" step="0.01">
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_note_cf" class="form-label">Note CF</label>
+                        <input type="number" class="form-control" id="edit_note_cf" name="note_cf" min="0" max="20" step="0.01">
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_note_projet" class="form-label">Note Projet</label>
+                        <input type="number" class="form-control" id="edit_note_projet" name="note_projet" min="0" max="20" step="0.01">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                <button type="button" class="btn btn-primary" id="saveEditBtn">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importModalLabel">Importer des Étudiants depuis CSV</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="importForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="csvFile" class="form-label">Sélectionner un fichier CSV</label>
+                        <input class="form-control" type="file" id="csvFile" name="csvFile" accept=".csv" required>
+                    </div>
+                    <div class="mb-3">
+                        <p class="text-muted small">
+                            Le CSV doit contenir ces en-têtes: Matricule, Nom_ET_complet, year, Departement, subject, Note_TP, Note_CC, Note_CF, Note_Projet
+                        </p>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Importer</button>
+                </form>
+                <div class="mt-3" id="importResults" style="display: none;">
+                    <div class="alert alert-info">
+                        <h6>Résultats d'importation:</h6>
+                        <p id="importResultsText"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add student form submission
+        document.getElementById('addStudentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            
+            // Send form data to the server
+            fetch('/add-student', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('Étudiant ajouté avec succès!');
+                    // Add the new student to the table
+                    const newRow = `
+                        <tr id="student-${data.student.matricule}">
+                            <td>${data.student.matricule}</td>
+                            <td>${data.student.nom_complet}</td>
+                            <td>${formData.get('year') || '-'}</td>
+                            <td>${formData.get('departement') || '-'}</td>
+                            <td>${formData.get('subject') || '-'}</td>
+                            <td>${data.student.note_tp || '-'}</td>
+                            <td>${data.student.note_cc || '-'}</td>
+                            <td>${data.student.note_cf || '-'}</td>
+                            <td>${data.student.note_projet || '-'}</td>
+                            <td>${data.student.moyen || '-'}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary edit-btn" data-matricule="${data.student.matricule}">Modifier</button>
+                                <button class="btn btn-sm btn-danger delete-btn" data-matricule="${data.student.matricule}">Supprimer</button>
+                            </td>
+                        </tr>
+                    `;
+                    document.getElementById('studentsList').insertAdjacentHTML('beforeend', newRow);
+                    document.getElementById('addStudentForm').reset();
+                } else {
+                    alert('Erreur: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Une erreur est survenue. Veuillez réessayer.');
+            });
+        });
+
+        // Edit button event delegation
+        document.getElementById('studentsList').addEventListener('click', function(e) {
+            if (e.target.classList.contains('edit-btn')) {
+                const matricule = e.target.dataset.matricule;
+                const row = document.getElementById(`student-${matricule}`);
+                const cells = row.cells;
+                
+                // Populate the edit form with current values
+                document.getElementById('edit_matricule').value = matricule;
+                document.getElementById('edit_note_tp').value = cells[5].textContent !== '-' ? cells[5].textContent : '';
+                document.getElementById('edit_note_cc').value = cells[6].textContent !== '-' ? cells[6].textContent : '';
+                document.getElementById('edit_note_cf').value = cells[7].textContent !== '-' ? cells[7].textContent : '';
+                document.getElementById('edit_note_projet').value = cells[8].textContent !== '-' ? cells[8].textContent : '';
+                
+                // Show the modal
+                new bootstrap.Modal(document.getElementById('editStudentModal')).show();
+            }
+            
+            if (e.target.classList.contains('delete-btn')) {
+                if (confirm('Êtes-vous sûr de vouloir supprimer cet étudiant?')) {
+                    const matricule = e.target.dataset.matricule;
+                    
+                    // Send delete request to the server
+                    fetch(`/delete-student/${matricule}`, {
+                        method: 'POST'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            // Remove the row from the table
+                            document.getElementById(`student-${matricule}`).remove();
+                            alert('Étudiant supprimé avec succès!');
+                        } else {
+                            alert('Erreur: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Une erreur est survenue. Veuillez réessayer.');
+                    });
+                }
+            }
+        });
+
+        // Save edit form
+        document.getElementById('saveEditBtn').addEventListener('click', function() {
+            const form = document.getElementById('editStudentForm');
+            const formData = new FormData(form);
+            const matricule = formData.get('matricule');
+            
+            // Send form data to the server
+            fetch(`/update-grade/${matricule}`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Update the table row
+                    const row = document.getElementById(`student-${matricule}`);
+                    const cells = row.cells;
+                    
+                    cells[5].textContent = formData.get('note_tp') || '-'; // TP
+                    cells[6].textContent = formData.get('note_cc') || '-'; // CC
+                    cells[7].textContent = formData.get('note_cf') || '-'; // CF
+                    cells[8].textContent = formData.get('note_projet') || '-'; // Project
+                    cells[9].textContent = data.moyen || '-'; // Average
+                    
+                    // Close the modal
+                    bootstrap.Modal.getInstance(document.getElementById('editStudentModal')).hide();
+                    alert('Notes mises à jour avec succès!');
+                } else {
+                    alert('Erreur: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Une erreur est survenue. Veuillez réessayer.');
+            });
+        });
+
+        // Search functionality
+        document.getElementById('searchButton').addEventListener('click', function() {
+            const query = document.getElementById('searchInput').value.trim();
+            window.location.href = `/search-students?query=${encodeURIComponent(query)}`;
+        });
+
+        // Allow pressing Enter to search
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('searchButton').click();
+            }
+        });
+
+        // Export functionality
+        document.getElementById('exportBtn').addEventListener('click', function() {
+            // Get all students from the table
+            const table = document.querySelector('table');
+            const rows = Array.from(table.querySelectorAll('tbody tr'));
+            
+            // Create CSV header
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Matricule,Nom_ET_complet,year,Departement,subject,Note_TP,Note_CC,Note_CF,Note_Projet,Moyen\n";
+            
+            // Add each row to CSV
+            rows.forEach(function(row) {
+                const cells = Array.from(row.cells);
+                // Get only the data cells, not the actions
+                const rowData = cells.slice(0, cells.length - 1).map(cell => {
+                    // Clean the data and wrap in quotes if needed
+                    let data = cell.textContent.trim();
+                    if (data === '-') data = '';
+                    // Escape quotes and wrap in quotes if contains comma
+                    if (data.includes(',') || data.includes('"')) {
+                        data = '"' + data.replace(/"/g, '""') + '"';
+                    }
+                    return data;
+                }).join(',');
+                csvContent += rowData + "\n";
+            });
+            
+            // Create download link
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `etudiants_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            
+            // Download the file
+            link.click();
+            document.body.removeChild(link);
+        });
+        
+        // Import functionality
+        document.getElementById('importForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const fileInput = document.getElementById('csvFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Veuillez sélectionner un fichier CSV à importer');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('csvFile', file);
+            
+            // Show loading state
+            const importBtn = this.querySelector('button[type="submit"]');
+            const originalBtnText = importBtn.textContent;
+            importBtn.disabled = true;
+            importBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Importation...';
+            
+            // Send to server for processing
+            fetch('/import-students', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Reset button state
+                importBtn.disabled = false;
+                importBtn.textContent = originalBtnText;
+                
+                // Show results
+                const resultsDiv = document.getElementById('importResults');
+                const resultsText = document.getElementById('importResultsText');
+                
+                if (data.status === 'success') {
+                    resultsText.innerHTML = `${data.imported} étudiants importés avec succès.<br>`;
+                    if (data.errors && data.errors.length > 0) {
+                        resultsText.innerHTML += `Échec de l'importation pour ${data.errors.length} entrées:<br>`;
+                        resultsText.innerHTML += `<ul>${data.errors.map(err => `<li>${err}</li>`).join('')}</ul>`;
+                    }
+                    resultsDiv.style.display = 'block';
+                    
+                    // Refresh the page after 2 seconds to show new data
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                } else {
+                    alert('Erreur: ' + data.message);
+                }
+            })
+            .catch(error => {
+                // Reset button state
+                importBtn.disabled = false;
+                importBtn.textContent = originalBtnText;
+                console.error('Error:', error);
+                alert('Une erreur est survenue pendant l\'importation. Veuillez réessayer.');
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,4 +1,46 @@
+# Virtual Environment
+venv/
+env/
+ENV/
+virtualenv/
+.venv/
+.env/
+.ENV/
+
+# Bootstrap
+bootstrap/
+node_modules/
+package-lock.json
+package.json
+
+# Python
 __pycache__/
-*.pyc
-instance/
-.env
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS specific files
+.DS_Store
+Thumbs.db

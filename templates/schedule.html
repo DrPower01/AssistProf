@@ -1,809 +1,1192 @@
 {% extends "base.html" %}
 
-{% block title %}Emploi du temps - AssistProf{% endblock %}
+{% block title %}Weekly Schedule{% endblock %}
 
 {% block content %}
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold mb-0">
-            <i class="bi bi-calendar-week me-2"></i>Emploi du temps
-        </h2>
-        <a href="{{ url_for('add_schedule') }}" class="btn btn-primary">
-            <i class="bi bi-plus-lg me-2"></i>Ajouter un cours
-        </a>
+<div class="container-fluid mt-4">
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-8">
+            <h2 class="schedule-title">Emploi du Temps Hebdomadaire</h2>
+            <p class="text-muted">Gérez votre emploi du temps d'enseignement du samedi au vendredi. Glissez et déposez les événements pour les reprogrammer.</p>
+        </div>
+        <div class="col-md-4 text-right">
+            <button type="button" class="btn btn-secondary mr-2" id="showNotifications">
+                <i class="fas fa-bell mr-1"></i> Notifications 
+                {% if unread_notifications and unread_notifications > 0 %}
+                <span class="badge badge-danger">{{ unread_notifications }}</span>
+                {% endif %}
+            </button>
+            <button type="button" class="btn btn-add-event" data-toggle="modal" data-target="#addEventModal">
+                <i class="fas fa-plus-circle mr-2"></i> Ajouter un Cours
+            </button>
+        </div>
     </div>
     
-    {% if teacher %}
-    <div class="alert alert-info">
-        <i class="bi bi-info-circle me-2"></i>
-        <span>Emploi du temps pour {{ teacher.Nom_EN }} {{ teacher.Prenom_EN }}</span>
-    </div>
-    {% endif %}
-    
-    <!-- Weekly Schedule View Card -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
-            <h5 class="card-title mb-0">Vue hebdomadaire</h5>
-            <div class="d-flex align-items-center gap-3">
-                <button class="btn btn-sm btn-light rounded-circle p-2" id="prev-week">
-                    <i class="bi bi-chevron-left"></i>
-                </button>
-                <span class="fw-medium" id="current-week">Semaine du {{ now.strftime('%d/%m/%Y') }}</span>
-                <button class="btn btn-sm btn-light rounded-circle p-2" id="next-week">
-                    <i class="bi bi-chevron-right"></i>
-                </button>
+    <!-- Notifications dropdown -->
+    <div id="notificationsPanel" class="notifications-panel">
+        <div class="notifications-header">
+            <h5>Notifications</h5>
+            <div>
+                <button id="markAllRead" class="btn btn-sm btn-link">Marquer tout comme lu</button>
+                <button id="closeNotifications" class="btn btn-sm btn-link"><i class="fas fa-times"></i></button>
             </div>
         </div>
-        <div class="card-body p-3">
-            <!-- Legend -->
-            <div class="d-flex gap-3 mb-4 flex-wrap">
-                <div class="d-flex align-items-center gap-2">
-                    <div class="bg-primary bg-opacity-25 rounded" style="width: 16px; height: 16px;"></div>
-                    <span>Cours </span>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <div class="bg-success bg-opacity-25 rounded" style="width: 16px; height: 16px;"></div>
-                    <span>TD </span>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <div class="bg-purple bg-opacity-25 rounded" style="width: 16px; height: 16px;"></div>
-                    <span>TP</span>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <div class="bg-warning bg-opacity-25 rounded" style="width: 16px; height: 16px;"></div>
-                    <span>Projet</span>
+        <div class="notifications-body" id="notificationsList">
+            <div class="text-center py-3">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="sr-only">Chargement...</span>
                 </div>
             </div>
+        </div>
+        <div class="notifications-footer">
+            <a href="/notifications" class="btn btn-link btn-block">Voir toutes les notifications</a>
+        </div>
+    </div>
+    
+    <!-- Status indicator for drag operations -->
+    <div id="drag-status" class="alert alert-success" style="display: none; position: fixed; top: 10px; right: 10px; z-index: 1050;">
+        Emploi du temps mis à jour avec succès !
+    </div>
 
-            <!-- Weekly Calendar -->
-            <div class="grid-container border rounded overflow-hidden">
-                <div class="grid-header bg-light">
-                    <div class="grid-time text-muted"></div>
-                    <div class="grid-day border-start">Samedi</div>
-                    <div class="grid-day border-start">Dimanche</div>
-                    <div class="grid-day border-start">Lundi</div>
-                    <div class="grid-day border-start">Mardi</div>
-                    <div class="grid-day border-start">Mercredi</div>
-                    <div class="grid-day border-start">Jeudi</div>
-                </div>
-                <div class="grid-body">
-                    <div class="grid-time-column text-end text-muted">
-                        {% for hour in range(7, 23) %}
-                        <div class="grid-time-slot">{{ "%02d"|format(hour) }}:00</div>
-                        {% endfor %}
-                    </div>
-                    {% for day in ["Samedi", "Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi"] %}
-                    <div class="grid-day-column border-start" data-day="{{ day }}">
-                        {% for hour in range(7, 23) %}
-                        <div class="grid-time-slot {% if hour % 2 == 0 %}bg-light bg-opacity-25{% endif %}" data-hour="{{ hour }}"></div>
-                        {% endfor %}
-                    </div>
+    <div class="schedule-container">
+        <div class="schedule-timeline">
+            <div class="timeline-header"></div>
+            <!-- Updated timeline to show hours from 7:30 to 22:30 with half-hour increments -->
+            {% for hour in range(7, 23) %}
+                <div class="timeline-hour">{{ hour }}:00</div>
+                {% if hour != 22 %}
+                <div class="timeline-half-hour">{{ hour }}:30</div>
+                {% endif %}
+            {% endfor %}
+        </div>
+        
+        <div class="schedule-grid">
+            <div class="day-headers">
+                {% for day in ['Samedi', 'Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'] %}
+                <div class="day-header">{{ day }}</div>
+                {% endfor %}
+            </div>
+            
+            <div class="schedule-days">
+                {% for day in ['Samedi', 'Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'] %}
+                <div class="schedule-day" id="{{ day.lower() }}-column" data-day="{{ day }}">
+                    <!-- Updated cells to include half-hour increments -->
+                    {% for hour in range(7, 23) %}
+                        <div class="schedule-cell droppable" id="{{ day.lower() }}-{{ hour }}-00" data-hour="{{ hour }}" data-half-hour="0" data-day="{{ day }}"></div>
+                        {% if hour != 22 %}
+                        <div class="schedule-cell droppable half-hour" id="{{ day.lower() }}-{{ hour }}-30" data-hour="{{ hour }}" data-half-hour="30" data-day="{{ day }}"></div>
+                        {% endif %}
+                    {% endfor %}
+
+                    <!-- Render events separately for proper positioning -->
+                    {% for event in schedule %}
+                        {% if event.Jour == day %}
+                        {% set cell_height = 30 %}
+                        {% set minutes_since_day_start = (event.start_hour - 7) * 60 + event.start_minute %}
+                        {% set duration_minutes = event.duration * 60 %}
+                        {% set top_position = minutes_since_day_start / 30 * cell_height %}
+                        {% set event_height = duration_minutes / 30 * cell_height %}
+                        {% set min_height = 30 %} <!-- Minimum height for short events -->
+                        <div class="event-item draggable" 
+                             id="event-{{ event.ID_EMP }}"
+                             style="top: {{ top_position }}px; height: {{ event_height if event_height > min_height else min_height }}px;" 
+                             data-event-id="{{ event.ID_EMP }}"
+                             data-duration="{{ event.duration }}"
+                             data-original-day="{{ event.Jour }}" 
+                             data-original-hour="{{ event.start_hour }}"
+                             data-original-minute="{{ event.start_minute }}"
+                             data-type="{{ event.Type_Cour }}">
+                            <!-- Add day navigation arrows -->
+                            <button class="day-nav-btn day-nav-prev" title="Jour précédent" data-event-id="{{ event.ID_EMP }}">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <button class="day-nav-btn day-nav-next" title="Jour suivant" data-event-id="{{ event.ID_EMP }}">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                            <div class="event-content">
+                                <div class="event-drag-handle"><i class="fas fa-grip-lines"></i></div>
+                                <h5 class="event-title">{{ event.Fillier }}</h5>
+                                <div class="event-details {% if event_height < 80 %}event-details-compact{% endif %}">
+                                    <div class="event-type">{{ event.Type_Cour }} - {{ event.Groupe }}</div>
+                                    <div class="event-time">{{ event.Heure_debut.strftime('%H:%M') }} - {{ event.Heure_fin.strftime('%H:%M') }}</div>
+                                    <div class="event-location"><i class="fas fa-map-marker-alt"></i> {{ event.Salle }}</div>
+                                </div>
+                                <button class="btn-delete-event" data-event-id="{{ event.ID_EMP }}">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        {% endif %}
                     {% endfor %}
                 </div>
+                {% endfor %}
             </div>
-        </div>
-    </div>
-    
-    <!-- List View -->
-    <div class="card shadow-sm">
-        <div class="card-header bg-white py-3">
-            <h5 class="card-title mb-0">Liste des cours</h5>
-        </div>
-        <div class="card-body">
-            {% if schedules %}
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Jour</th>
-                            <th>Heure de début</th>
-                            <th>Heure de fin</th>
-                            <th>Salle</th>
-                            <th>Filière</th>
-                            <th>Type de cours</th>
-                            <th>Groupe</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for schedule in schedules %}
-                        <tr>
-                            <td>{{ schedule.Jour }}</td>
-                            <td>{{ schedule.Heure_debut }}</td>
-                            <td>{{ schedule.Heure_fin }}</td>
-                            <td>{{ schedule.Salle }}</td>
-                            <td>{{ schedule.Fillier }}</td>
-                            <td>{{ schedule.Type_Cour }}</td>
-                            <td>{{ schedule.Groupe }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <div class="alert alert-info">
-                <i class="bi bi-info-circle me-2"></i>Aucun cours n'est encore planifié.
-            </div>
-            {% endif %}
         </div>
     </div>
 </div>
 
-<!-- Modal for Schedule Info -->
-<div class="modal fade" id="scheduleModal" tabindex="-1" aria-labelledby="scheduleModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+<!-- Add Event Modal -->
+<div class="modal fade" id="addEventModal" tabindex="-1" aria-labelledby="addEventModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <form id="editScheduleForm" method="POST">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="scheduleModalLabel">Modifier le cours</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" id="modalScheduleId" name="id">
-                    <div class="mb-3">
-                        <label for="modalJour" class="form-label">Jour</label>
-                        <input type="text" class="form-control" id="modalJour" name="jour">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addEventModalLabel">Ajouter un Événement</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="scheduleEventForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="eventFillier">Cours/Filière</label>
+                                <input type="text" class="form-control" id="eventFillier" name="fillier" required placeholder="ex. Informatique">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="eventGroupe">Groupe</label>
+                                <input type="text" class="form-control" id="eventGroupe" name="groupe" required placeholder="ex. G1">
+                            </div>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="modalHeureDebut" class="form-label">Heure de début</label>
-                        <input type="time" class="form-control" id="modalHeureDebut" name="heure_debut">
+                    
+                    <div class="form-group">
+                        <label for="eventTypeCour">Type de Cours</label>
+                        <select class="form-control" id="eventTypeCour" name="type_cour" required>
+                            <option value="Lecture">Cours Magistral</option>
+                            <option value="Lab">TP</option>
+                            <option value="Tutorial">TD</option>
+                            <option value="Exam">Examen</option>
+                            <option value="Office Hours">Heures de Bureau</option>
+                        </select>
                     </div>
-                    <div class="mb-3">
-                        <label for="modalHeureFin" class="form-label">Heure de fin</label>
-                        <input type="time" class="form-control" id="modalHeureFin" name="heure_fin">
+                    
+                    <div class="form-group">
+                        <label for="eventJour">Jour</label>
+                        <select class="form-control" id="eventJour" name="jour" required>
+                            <option value="Samedi">Samedi</option>
+                            <option value="Dimanche">Dimanche</option>
+                            <option value="Lundi">Lundi</option>
+                            <option value="Mardi">Mardi</option>
+                            <option value="Mercredi">Mercredi</option>
+                            <option value="Jeudi">Jeudi</option>
+                            <option value="Vendredi">Vendredi</option>
+                        </select>
                     </div>
-                    <div class="mb-3">
-                        <label for="modalSalle" class="form-label">Salle</label>
-                        <input type="text" class="form-control" id="modalSalle" name="salle">
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="eventStartTime">Heure de Début</label>
+                                <input type="time" class="form-control" id="eventStartTime" name="heure_debut" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="eventEndTime">Heure de Fin</label>
+                                <input type="time" class="form-control" id="eventEndTime" name="heure_fin" required>
+                            </div>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="modalFiliere" class="form-label">Filière</label>
-                        <input type="text" class="form-control" id="modalFiliere" name="filiere">
+                    
+                    <div class="form-group">
+                        <label for="eventSalle">Salle</label>
+                        <input type="text" class="form-control" id="eventSalle" name="salle" required placeholder="ex. Salle 101">
                     </div>
-                    <div class="mb-3">
-                        <label for="modalType" class="form-label">Type de cours</label>
-                        <input type="text" class="form-control" id="modalType" name="type">
-                    </div>
-                    <div class="mb-3">
-                        <label for="modalGroupe" class="form-label">Groupe</label>
-                        <input type="text" class="form-control" id="modalGroupe" name="groupe">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" id="closeModal">Fermer</button>
-                    <button type="button" class="btn btn-danger" id="deleteSchedule">Supprimer</button>
-                    <button type="submit" class="btn btn-primary">Modifier</button>
-                </div>
-            </form>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
+                <button type="button" id="saveEventBtn" class="btn btn-primary">Enregistrer</button>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- JavaScript for Weekly Schedule -->
+<script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Create the schedules array from template data
-    var schedulesData = [];
+    // Initialize drag and drop functionality
+    initDragDrop();
     
-    {% for schedule in schedules %}
-    schedulesData.push({
-        id: {{ schedule.ID_EMP|default(0) }},
-        jour: "{{ schedule.Jour|default('') }}",
-        debut: "{{ schedule.Heure_debut|default('00:00') }}",
-        fin: "{{ schedule.Heure_fin|default('00:00') }}",
-        salle: "{{ schedule.Salle|default('') }}",
-        filiere: "{{ schedule.Fillier|default('') }}",
-        type: "{{ schedule.Type_Cour|default('') }}",
-        groupe: "{{ schedule.Groupe|default('') }}"
+    // Notifications panel functionality
+    const notificationsBtn = document.getElementById('showNotifications');
+    const notificationsPanel = document.getElementById('notificationsPanel');
+    const closeNotificationsBtn = document.getElementById('closeNotifications');
+    const markAllReadBtn = document.getElementById('markAllRead');
+    
+    notificationsBtn.addEventListener('click', function() {
+        notificationsPanel.classList.toggle('show');
+        if (notificationsPanel.classList.contains('show')) {
+            fetchNotifications();
+        }
     });
-    {% endfor %}
-
-    // Function to get color class based on course type
-    function getTypeColor(type) {
-        var colors = {
-            'Cours': 'bg-primary text-white border-primary',
-            'TD': 'bg-success text-white border-success',
-            'TP': 'bg-purple text-white border-purple',
-            'Projet': 'bg-warning text-white border-warning'
-        };
-        return colors[type] || 'bg-secondary text-white border-secondary';
-    }
-
-    // Function to properly parse time string to hours and minutes
-    function parseTime(timeStr) {
-        // First normalize the time format
-        if (!timeStr) return { hours: 0, minutes: 0 };
-        
-        // Convert Python datetime.time object string format to HH:MM
-        // It could be in formats like "08:00:00" or "8:00"
-        let cleanTime = timeStr;
-        if (typeof timeStr === 'object') {
-            // If it's already a JS Date object
-            return {
-                hours: timeStr.getHours(),
-                minutes: timeStr.getMinutes()
-            };
+    
+    closeNotificationsBtn.addEventListener('click', function() {
+        notificationsPanel.classList.remove('show');
+    });
+    
+    // Close notifications when clicking outside
+    document.addEventListener('click', function(event) {
+        if (!notificationsPanel.contains(event.target) && 
+            event.target !== notificationsBtn && 
+            !notificationsBtn.contains(event.target) &&
+            notificationsPanel.classList.contains('show')) {
+            notificationsPanel.classList.remove('show');
         }
-        
-        // Handle string formats
-        let parts = cleanTime.split(':');
-        return {
-            hours: parseInt(parts[0], 10),
-            minutes: parseInt(parts[1], 10)
-        };
-    }
-
-    // Create course elements in the weekly schedule
-    function renderSchedule() {
-        // Clear previous courses
-        var courseItems = document.querySelectorAll('.course-item');
-        for (var i = 0; i < courseItems.length; i++) {
-            courseItems[i].remove();
-        }
-        
-        // Debug output
-        console.log('Rendering schedule with ' + schedulesData.length + ' items');
-        
-        // Calculate cell height once (it's consistent across all cells)
-        const sampleCell = document.querySelector('.grid-time-slot');
-        const cellHeight = sampleCell ? sampleCell.offsetHeight : 80; // Default to 80px if not found
-        
-        // Loop through each schedule item
-        for (var i = 0; i < schedulesData.length; i++) {
-            var course = schedulesData[i];
-            console.log('Processing course:', course);
-            
-            // Parse time values
-            var startTime = parseTime(course.debut);
-            var endTime = parseTime(course.fin);
-            
-            console.log('Start time parsed:', startTime, 'End time parsed:', endTime);
-            
-            var startHour = startTime.hours;
-            var startMinute = startTime.minutes;
-            var endHour = endTime.hours;
-            var endMinute = endTime.minutes;
-            
-            // Calculate duration in hours
-            var duration = (endHour - startHour) + (endMinute - startMinute) / 60;
-            
-            // Make sure we have a valid duration
-            if (duration <= 0) {
-                console.warn('Invalid duration for course:', course);
-                continue;
-            }
-            
-            console.log('Course duration:', duration, 'hours');
-            
-            // Find the column for this day
-            var dayColumn = document.querySelector('.grid-day-column[data-day="' + course.jour + '"]');
-            if (!dayColumn) {
-                console.warn('Day column not found for:', course.jour);
-                continue;
-            }
-
-            // Find all time slots in this day column
-            var timeSlots = dayColumn.querySelectorAll('.grid-time-slot');
-            
-            // Calculate index based on start hour (relative to our range starting at 7:00)
-            var slotIndex = startHour - 7;
-            if (slotIndex < 0 || slotIndex >= timeSlots.length) {
-                console.warn('Time slot index out of range:', slotIndex, 'for hour', startHour);
-                continue;
-            }
-            
-            // Get the target time slot
-            var targetSlot = timeSlots[slotIndex];
-            
-            // Create the course element
-            var courseEl = document.createElement('div');
-            
-            // Use the text-white class for all items
-            courseEl.className = 'course-item ' + getTypeColor(course.type) + ' rounded p-2 border small';
-            
-            // Position absolutely within the day column
-            // Calculate top position based on hour and minute
-            var topPosition = slotIndex * cellHeight + (startMinute / 60 * cellHeight);
-            var heightValue = duration * cellHeight;
-            
-            courseEl.style.position = 'absolute';
-            courseEl.style.top = topPosition + 'px';
-            courseEl.style.left = '0';
-            courseEl.style.right = '0';
-            courseEl.style.height = heightValue + 'px';
-            courseEl.style.zIndex = '10';
-            courseEl.style.overflow = 'hidden';
-            
-            courseEl.setAttribute('data-bs-toggle', 'tooltip');
-            courseEl.setAttribute('data-bs-placement', 'top');
-            courseEl.setAttribute('data-bs-title', course.filiere + ' - Groupe ' + course.groupe);
-            
-            // Add schedule ID as data attribute for edit/delete functionality
-            courseEl.setAttribute('data-schedule-id', course.id);
-            
-            // Course content with text-white class added to the small text
-            courseEl.innerHTML = 
-                '<div class="fw-medium">' + course.filiere + '</div>' +
-                '<div class="d-flex align-items-center gap-1">' +
-                    '<i class="bi bi-clock"></i> ' + course.debut + '-' + course.fin +
-                '</div>' +
-                '<div class="d-flex align-items-center gap-1">' +
-                    '<i class="bi bi-geo-alt"></i> ' + course.salle +
-                '</div>' +
-                '<div class="small">' + course.type + ' - Grp ' + course.groupe + '</div>';
-            
-            // Add resize handle
-            const resizeHandle = document.createElement('div');
-            resizeHandle.className = 'resize-handle';
-            courseEl.appendChild(resizeHandle);
-            
-            // Append to day column (not individual cell)
-            dayColumn.appendChild(courseEl);
-        }
-        
-        // Initialize tooltips
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
-        });
-
-        // Attach click events after rendering
-        attachScheduleClickEvents();
-
-        // Make schedule items draggable
-        makeScheduleDraggable();
-    }
+    });
     
-    // Week navigation
-    var currentDate = new Date();
-    
-    function updateWeekDisplay() {
-        document.getElementById('current-week').textContent = 'Semaine du ' + currentDate.toLocaleDateString();
-    }
-    
-    // Add event listeners to week navigation buttons
-    var prevWeekBtn = document.getElementById('prev-week');
-    if (prevWeekBtn) {
-        prevWeekBtn.addEventListener('click', function() {
-            currentDate.setDate(currentDate.getDate() - 7);
-            updateWeekDisplay();
-            // Here we would ideally fetch new data for the selected week
-            // For now, we'll just re-render the existing schedules
-            renderSchedule();
-        });
-    }
-    
-    var nextWeekBtn = document.getElementById('next-week');
-    if (nextWeekBtn) {
-        nextWeekBtn.addEventListener('click', function() {
-            currentDate.setDate(currentDate.getDate() + 7);
-            updateWeekDisplay();
-            // Here we would ideally fetch new data for the selected week
-            renderSchedule();
-        });
-    }
-    
-    // Initial render
-    renderSchedule();
-
-    // Log total schedule items loaded
-    console.log('Loaded ' + schedulesData.length + ' schedule items');
-    
-    // Function to check for upcoming schedules and notify the user
-    function checkUpcomingSchedules() {
-        fetch('/api/check_upcoming_schedules')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
+    function fetchNotifications() {
+        fetch('/get-notifications')
+            .then(response => response.json())
             .then(data => {
-                console.log('Schedule check completed:', data);
-                // If notifications were sent, we could show a message to the user
-                if (data.notifications && data.notifications.length > 0) {
-                    // Optionally show a notification in the browser
-                    data.notifications.forEach(notification => {
-                        if (notification.status === 'sent') {
-                            // Create a toast notification (requires Bootstrap 5)
-                            const toastContainer = document.getElementById('toast-container');
-                            if (toastContainer) {
-                                const toast = document.createElement('div');
-                                toast.className = 'toast align-items-center text-white bg-primary border-0';
-                                toast.setAttribute('role', 'alert');
-                                toast.setAttribute('aria-live', 'assertive');
-                                toast.setAttribute('aria-atomic', 'true');
-                                toast.innerHTML = `
-                                    <div class="d-flex">
-                                        <div class="toast-body">
-                                            <i class="bi bi-bell me-2"></i>
-                                            Un rappel par email a été envoyé pour votre cours à ${notification.start_time}.
-                                        </div>
-                                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                                    </div>
-                                `;
-                                toastContainer.appendChild(toast);
-                                const bsToast = new bootstrap.Toast(toast);
-                                bsToast.show();
-                                
-                                // Remove toast after it's hidden
-                                toast.addEventListener('hidden.bs.toast', function() {
-                                    toast.remove();
-                                });
-                            }
-                        }
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error checking upcoming schedules:', error);
-            });
-    }
-    
-    // Add a toast container for notifications if it doesn't exist
-    if (!document.getElementById('toast-container')) {
-        const toastContainer = document.createElement('div');
-        toastContainer.id = 'toast-container';
-        toastContainer.className = 'position-fixed top-0 end-0 p-3';
-        toastContainer.style.zIndex = '1050';
-        document.body.appendChild(toastContainer);
-    }
-    
-    // Check for upcoming schedules immediately and then every 5 minutes
-    checkUpcomingSchedules();
-    setInterval(checkUpcomingSchedules, 5 * 60 * 1000);
-
-    // Show modal with schedule details on click
-    function showScheduleModal(schedule) {
-        // Reset the modal form to avoid showing previous data
-        const modalForm = document.getElementById('editScheduleForm');
-        modalForm.reset();
-
-        // Clear any lingering Bootstrap modal state
-        const scheduleModalElement = document.getElementById('scheduleModal');
-        scheduleModalElement.querySelectorAll('input').forEach(input => input.value = '');
-
-        // Populate the modal with the current schedule's data
-        document.getElementById('modalScheduleId').value = schedule.id;
-        document.getElementById('modalJour').value = schedule.jour;
-        document.getElementById('modalHeureDebut').value = schedule.debut;
-        document.getElementById('modalHeureFin').value = schedule.fin;
-        document.getElementById('modalSalle').value = schedule.salle;
-        document.getElementById('modalFiliere').value = schedule.filiere;
-        document.getElementById('modalType').value = schedule.type;
-        document.getElementById('modalGroupe').value = schedule.groupe;
-
-        // Set up delete button
-        document.getElementById('deleteSchedule').onclick = function() {
-            if (confirm('Êtes-vous sûr de vouloir supprimer ce cours ?')) {
-                window.location.href = '/delete_schedule/' + schedule.id;
-            }
-        };
-
-        // Set form action for editing
-        modalForm.action = '/edit_schedule/' + schedule.id;
-
-        // Show the modal
-        const scheduleModal = new bootstrap.Modal(scheduleModalElement);
-        scheduleModal.show();
-
-        // Add event listener to close button
-        document.getElementById('closeModal').onclick = function() {
-            scheduleModal.hide();
-        };
-    }
-
-    // Attach click events to schedule items
-    function attachScheduleClickEvents() {
-        const scheduleItems = document.querySelectorAll('.course-item');
-        scheduleItems.forEach(item => {
-            item.addEventListener('click', function(e) {
-                // Ignore clicks on the resize handle
-                if (e.target.classList.contains('resize-handle')) {
+                const notificationsList = document.getElementById('notificationsList');
+                notificationsList.innerHTML = '';
+                
+                if (data.notifications.length === 0) {
+                    notificationsList.innerHTML = '<div class="no-notifications">Aucune nouvelle notification</div>';
                     return;
                 }
                 
-                const scheduleId = this.getAttribute('data-schedule-id');
-                const schedule = schedulesData.find(s => s.id == scheduleId);
-                if (schedule) {
-                    showScheduleModal(schedule);
+                data.notifications.forEach(notification => {
+                    const notificationItem = document.createElement('div');
+                    notificationItem.className = 'notification-item ' + (notification.is_read ? '' : 'unread');
+                    notificationItem.dataset.id = notification.id;
+                    
+                    let iconClass = 'fa-bell';
+                    if (notification.type === 'schedule') iconClass = 'fa-calendar-alt';
+                    
+                    notificationItem.innerHTML = `
+                        <div class="notification-icon">
+                            <i class="fas ${iconClass}"></i>
+                        </div>
+                        <div class="notification-content">
+                            <div class="notification-title">${notification.title}</div>
+                            <div class="notification-message">${notification.message}</div>
+                            <div class="notification-time">${notification.created_at}</div>
+                        </div>
+                    `;
+                    
+                    notificationItem.addEventListener('click', function() {
+                        markAsRead(notification.id);
+                        this.classList.remove('unread');
+                    });
+                    
+                    notificationsList.appendChild(notificationItem);
+                });
+                
+                // Update badge
+                const badge = notificationsBtn.querySelector('.badge');
+                if (data.unread_count > 0) {
+                    if (badge) {
+                        badge.textContent = data.unread_count;
+                    } else {
+                        const newBadge = document.createElement('span');
+                        newBadge.className = 'badge badge-danger';
+                        newBadge.textContent = data.unread_count;
+                        notificationsBtn.appendChild(newBadge);
+                    }
+                } else if (badge) {
+                    badge.style.display = 'none';
                 }
             });
-        });
     }
-
-    // Enable dragging for schedule items
-    function makeScheduleDraggable() {
-        const scheduleItems = document.querySelectorAll('.course-item');
-        scheduleItems.forEach(item => {
-            item.setAttribute('draggable', 'true');
-
-            // Handle drag start
-            item.addEventListener('dragstart', function(e) {
-                e.dataTransfer.setData('text/plain', this.getAttribute('data-schedule-id'));
-                this.classList.add('dragging');
-            });
-
-            // Handle drag end
-            item.addEventListener('dragend', function() {
-                this.classList.remove('dragging');
-            });
-            
-            // Make items resizable via the resize handle
-            const resizeHandle = item.querySelector('.resize-handle');
-            
-            let isResizing = false;
-            let startY;
-            let startHeight;
-
-            resizeHandle.addEventListener('mousedown', function(e) {
-                isResizing = true;
-                startY = e.clientY;
-                startHeight = parseInt(getComputedStyle(item).height, 10);
-                e.stopPropagation();  // Prevent triggering drag or click
-                e.preventDefault();  // Prevent text selection
-            });
-
-            document.addEventListener('mousemove', function(e) {
-                if (!isResizing) return;
-                
-                const cellHeight = document.querySelector('.grid-time-slot').offsetHeight;
-                const deltaY = e.clientY - startY;
-                
-                // Snap to half-hour increments (half of cell height)
-                const halfHourHeight = cellHeight / 2;
-                const snapDeltaY = Math.round(deltaY / halfHourHeight) * halfHourHeight;
-                
-                const newHeight = startHeight + snapDeltaY;
-                
-                // Minimum height of 1/2 hour
-                if (newHeight >= halfHourHeight) {
-                    item.style.height = newHeight + 'px';
-                    
-                    // Update the end time based on height
-                    const scheduleId = item.getAttribute('data-schedule-id');
-                    const schedule = schedulesData.find(s => s.id == scheduleId);
-                    if (schedule) {
-                        // Calculate duration in half-hours based on height
-                        const durationHalfHours = Math.round(newHeight / halfHourHeight);
-                        const durationHours = durationHalfHours / 2;
-                        
-                        // Parse start time
-                        const startTime = parseTime(schedule.debut);
-                        
-                        // Calculate end time
-                        let endHours = startTime.hours + Math.floor(durationHours);
-                        let endMinutes = startTime.minutes + ((durationHours % 1) * 60);
-                        
-                        // Adjust if minutes >= 60
-                        if (endMinutes >= 60) {
-                            endHours += 1;
-                            endMinutes -= 60;
-                        }
-                        
-                        // Format end time
-                        schedule.fin = `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
-                        
-                        // Update text on the item
-                        const timeDisplay = item.querySelector('.bi-clock').parentElement;
-                        timeDisplay.innerHTML = `<i class="bi bi-clock"></i> ${schedule.debut}-${schedule.fin}`;
-                    }
-                }
-            });
-
-            document.addEventListener('mouseup', function() {
-                if (isResizing) {
-                    isResizing = false;
-                    
-                    // Save the changes to the server
-                    const scheduleId = item.getAttribute('data-schedule-id');
-                    const schedule = schedulesData.find(s => s.id == scheduleId);
-                    if (schedule) {
-                        saveScheduleChanges(schedule);
-                    }
-                }
-            });
-        });
-
-        const dayColumns = document.querySelectorAll('.grid-day-column');
-        dayColumns.forEach(column => {
-            // Allow dropping
-            column.addEventListener('dragover', function(e) {
-                e.preventDefault();
-            });
-
-            // Handle drop
-            column.addEventListener('drop', function(e) {
-                e.preventDefault();
-                const scheduleId = e.dataTransfer.getData('text/plain');
-                const draggedItem = document.querySelector(`.course-item[data-schedule-id="${scheduleId}"]`);
-                if (draggedItem) {
-                    const newDay = this.getAttribute('data-day');
-                    const cellHeight = this.querySelector('.grid-time-slot').offsetHeight;
-                    const dropY = e.offsetY;
-                    
-                    // Calculate hour and snap to hour/half-hour
-                    const slotIndex = Math.floor(dropY / cellHeight);
-                    const newHour = slotIndex + 7; // Time slots start at 7:00
-                    
-                    // Determine if we should snap to half hour or full hour
-                    const fractionInCell = (dropY % cellHeight) / cellHeight;
-                    const isHalfHour = fractionInCell >= 0.25 && fractionInCell < 0.75;
-                    
-                    // Find the schedule in our data
-                    const scheduleIndex = schedulesData.findIndex(s => s.id == scheduleId);
-                    if (scheduleIndex !== -1) {
-                        const schedule = schedulesData[scheduleIndex];
-                        
-                        // Ensure the time is within the allowed range (7:00 to 22:00)
-                        if (newHour < 7 || newHour >= 22) {
-                            alert('Les horaires doivent être entre 7h00 et 22h00.');
-                            return;
-                        }
-
-                        // Update schedule data
-                        schedule.jour = newDay;
-                        schedule.debut = `${String(newHour).padStart(2, '0')}:${isHalfHour ? '30' : '00'}`;
-                        
-                        // Parse duration from the original schedule to maintain the same duration
-                        const startTime = parseTime(schedule.debut);
-                        let endTime = { 
-                            hours: startTime.hours + 1, // Default 1 hour duration
-                            minutes: startTime.minutes 
-                        };
-                        
-                        // Format the end time
-                        schedule.fin = `${String(endTime.hours).padStart(2, '0')}:${String(endTime.minutes).padStart(2, '0')}`;
-
-                        // Update the UI - position at hour or half-hour
-                        const topPosition = slotIndex * cellHeight + (isHalfHour ? cellHeight / 2 : 0);
-                        draggedItem.style.top = `${topPosition}px`;
-                        
-                        // Move the element to the new column
-                        this.appendChild(draggedItem);
-
-                        // Save the changes to the server
-                        saveScheduleChanges(schedule);
-                    }
-                }
-            });
-        });
-    }
-
-    // Function to save schedule changes to server
-    function saveScheduleChanges(schedule) {
-        fetch(`/edit_schedule/${schedule.id}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
-            },
-            body: JSON.stringify({
-                jour: schedule.jour,
-                heure_debut: schedule.debut,
-                heure_fin: schedule.fin,
-                salle: schedule.salle,
-                filiere: schedule.filiere,
-                type: schedule.type,
-                groupe: schedule.groupe
-            })
+    
+    function markAsRead(notificationId) {
+        fetch(`/notifications/mark-read/${notificationId}`, {
+            method: 'POST'
         })
         .then(response => response.json())
         .then(data => {
-            if (data.success) {
-                console.log('Schedule updated successfully');
+            if (data.status === 'success') {
+                // Update unread count
+                const badge = notificationsBtn.querySelector('.badge');
+                if (badge) {
+                    const currentCount = parseInt(badge.textContent);
+                    if (currentCount > 1) {
+                        badge.textContent = currentCount - 1;
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+            }
+        });
+    }
+
+    // Save event
+    document.getElementById('saveEventBtn').addEventListener('click', function() {
+        const form = document.getElementById('scheduleEventForm');
+        const formData = new FormData(form);
+        
+        fetch('/add-schedule-event', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                window.location.reload();
             } else {
-                console.error('Failed to update schedule:', data.message);
+                alert('Error: ' + data.message);
             }
         })
         .catch(error => {
-            console.error('Error updating schedule:', error);
+            console.error('Error:', error);
+            alert('An error occurred while saving the event.');
+        });
+    });
+
+    // Delete event handlers
+    document.querySelectorAll('.btn-delete-event').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (confirm('Êtes-vous sûr de vouloir supprimer cet événement ?')) {
+                const eventId = this.getAttribute('data-event-id');
+                
+                fetch(`/delete-schedule-event/${eventId}`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        window.location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while deleting the event.');
+                });
+            }
+        });
+    });
+
+    // Toggle event details
+    document.querySelectorAll('.event-item').forEach(item => {
+        item.addEventListener('click', function() {
+            this.classList.toggle('expanded');
+        });
+    });
+
+    // Event handlers for navigation buttons
+    document.querySelectorAll('.day-nav-btn').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.stopPropagation(); // Prevent event bubbling to parent
+            
+            const eventId = this.getAttribute('data-event-id');
+            const eventElement = document.getElementById(`event-${eventId}`);
+            const currentDay = eventElement.getAttribute('data-original-day');
+            
+            // Get the current day index
+            const days = ['Samedi', 'Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
+            const currentIndex = days.indexOf(currentDay);
+            
+            // Determine new day based on button clicked
+            let newIndex;
+            if (this.classList.contains('day-nav-prev')) {
+                newIndex = (currentIndex - 1 + days.length) % days.length; // Wrap around to end
+            } else {
+                newIndex = (currentIndex + 1) % days.length; // Wrap around to beginning
+            }
+            
+            const newDay = days[newIndex];
+            
+            // Get current time values
+            const currentHour = parseInt(eventElement.getAttribute('data-original-hour'));
+            const currentMinute = parseInt(eventElement.getAttribute('data-original-minute') || 0);
+            
+            // Show moving animation
+            const statusIndicator = document.getElementById('drag-status');
+            statusIndicator.style.display = 'block';
+            statusIndicator.textContent = `Déplacement vers ${newDay}...`;
+            
+            // Create visual effect for transition
+            eventElement.classList.add('day-changing');
+            
+            // Update event position in database
+            updateEventPosition(eventId, newDay, currentHour, currentMinute);
+        });
+    });
+    
+    function initDragDrop() {
+        interact('.draggable')
+            .draggable({
+                inertia: false,
+                modifiers: [
+                    interact.modifiers.restrictRect({
+                        restriction: '.schedule-grid',
+                        endOnly: true
+                    })
+                ],
+                autoScroll: true,
+                // Enable multi-axis dragging (both horizontal and vertical)
+                lockAxis: false,
+                onstart: function(event) {
+                    event.target.classList.add('is-dragging');
+                    
+                    // Hide details for compact events while dragging
+                    event.target.querySelectorAll('.event-details-compact').forEach(el => {
+                        el.style.display = 'none';
+                    });
+                    
+                    // Remember original position for potential revert
+                    const eventElement = event.target;
+                    eventElement.setAttribute('data-x', 0);
+                    eventElement.setAttribute('data-y', 0);
+                    
+                    // Store original day and position before drag
+                    const originalTop = parseFloat(window.getComputedStyle(eventElement).top);
+                    eventElement.setAttribute('data-original-top', originalTop);
+                    
+                    // Explicitly store the parent day column ID
+                    const dayColumn = eventElement.closest('.schedule-day');
+                    if (dayColumn) {
+                        eventElement.setAttribute('data-original-parent-id', dayColumn.id);
+                        console.log(`Starting drag from day: ${dayColumn.getAttribute('data-day')}`);
+                    }
+                },
+                onmove: dragMoveListener,
+                onend: function(event) {
+                    event.target.classList.remove('is-dragging');
+                    
+                    // Show details again after drag ends
+                    event.target.querySelectorAll('.event-details-compact').forEach(el => {
+                        el.removeAttribute('style');
+                    });
+                    
+                    // Get the event element and its current position
+                    const eventElement = event.target;
+                    const x = parseFloat(eventElement.getAttribute('data-x')) || 0;
+                    const y = parseFloat(eventElement.getAttribute('data-y')) || 0;
+                    
+                    // Find the day column under the dragged element
+                    const elementRect = eventElement.getBoundingClientRect();
+                    const centerX = elementRect.left + elementRect.width / 2;
+                    const centerY = elementRect.top + 15; // Point near the top of the event
+                    
+                    // Find what's below the center point
+                    let elementBelow = document.elementFromPoint(centerX, centerY);
+                    
+                    // Remove drag-over class from all cells
+                    document.querySelectorAll('.drag-over').forEach(cell => {
+                        cell.classList.remove('drag-over');
+                    });
+                    document.querySelectorAll('.day-highlight').forEach(day => {
+                        day.classList.remove('day-highlight');
+                    });
+                    
+                    if (!elementBelow) {
+                        // If nothing is below (off-screen), revert to original position
+                        revertPosition(eventElement);
+                        return;
+                    }
+                    
+                    // Find which day column we're over
+                    let dayColumn = elementBelow.closest('.schedule-day');
+                    if (!dayColumn) {
+                        // Try to find day column by looking at parent elements
+                        let parent = elementBelow;
+                        while (parent && parent !== document.body) {
+                            if (parent.classList && parent.classList.contains('schedule-day')) {
+                                dayColumn = parent;
+                                break;
+                            }
+                            parent = parent.parentElement;
+                        }
+                    }
+                    
+                    if (!dayColumn) {
+                        // If we couldn't find a day column, revert the drag
+                        console.log("No day column found, reverting drag");
+                        revertPosition(eventElement);
+                        return;
+                    }
+                    
+                    const newDay = dayColumn.getAttribute('data-day');
+                    console.log(`Dropped on day: ${newDay}`);
+                    
+                    // Calculate time based on vertical position
+                    const dayColumnRect = dayColumn.getBoundingClientRect();
+                    const relativeY = centerY - dayColumnRect.top;
+                    const cellHeight = 30; // Height of each half-hour cell
+                    
+                    // Calculate hours and minutes based on position
+                    const totalMinutes = Math.floor(relativeY / cellHeight) * 30;
+                    let newHour = Math.floor(totalMinutes / 60) + 7; // Starting from 7:00
+                    let newMinute = totalMinutes % 60;
+                    
+                    // Ensure we don't go below the minimum or above the maximum time
+                    if (newHour < 7) newHour = 7;
+                    if (newHour >= 23) {
+                        newHour = 22;
+                        newMinute = 30;
+                    }
+                    
+                    const eventId = eventElement.getAttribute('data-event-id');
+                    
+                    // Only update if the position has actually changed
+                    const originalDay = eventElement.getAttribute('data-original-day');
+                    const originalHour = parseInt(eventElement.getAttribute('data-original-hour'));
+                    const originalMinute = parseInt(eventElement.getAttribute('data-original-minute') || 0);
+                    
+                    console.log(`Original day: ${originalDay}, New day: ${newDay}`);
+                    console.log(`Original time: ${originalHour}:${originalMinute}, New time: ${newHour}:${newMinute}`);
+                    
+                    if (newDay !== originalDay || newHour !== originalHour || newMinute !== originalMinute) {
+                        // Send update to server
+                        updateEventPosition(eventId, newDay, newHour, newMinute);
+                    } else {
+                        // Reset position if nothing has changed
+                        revertPosition(eventElement);
+                    }
+                }
+            });
+
+        function dragMoveListener(event) {
+            const target = event.target;
+            // Get the initial position
+            const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
+            const y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
+
+            // Update the element's position
+            target.style.transform = `translate(${x}px, ${y}px)`;
+
+            // Update the attributes
+            target.setAttribute('data-x', x);
+            target.setAttribute('data-y', y);
+            
+            // Highlight the cell and day column under the dragged event
+            const elementRect = target.getBoundingClientRect();
+            const centerX = elementRect.left + elementRect.width / 2;
+            const centerY = elementRect.top + 15; // Top area of the event
+            
+            // Find what's below
+            const elementBelow = document.elementFromPoint(centerX, centerY);
+            
+            // Remove highlight from all cells
+            document.querySelectorAll('.drag-over').forEach(cell => {
+                cell.classList.remove('drag-over');
+            });
+            
+            // Add highlight to current day column
+            if (elementBelow) {
+                const dayColumn = elementBelow.closest('.schedule-day');
+                if (dayColumn) {
+                    // Find the cell at this vertical position in the day column
+                    const dayColumnRect = dayColumn.getBoundingClientRect();
+                    const relativeY = centerY - dayColumnRect.top;
+                    const cellHeight = 30;
+                    const cellIndex = Math.floor(relativeY / cellHeight);
+                    
+                    // Highlight the specific cell if we can find it
+                    const cells = dayColumn.querySelectorAll('.schedule-cell');
+                    if (cellIndex >= 0 && cellIndex < cells.length) {
+                        cells[cellIndex].classList.add('drag-over');
+                    }
+                    
+                    // Also slightly highlight the day column
+                    dayColumn.classList.add('day-highlight');
+                }
+            }
+        }
+        
+        // Function to revert an element to its original position
+        function revertPosition(element) {
+            element.style.transform = 'translate(0px, 0px)';
+            element.setAttribute('data-x', 0);
+            element.setAttribute('data-y', 0);
+            
+            // Remove any day column highlighting
+            document.querySelectorAll('.day-highlight').forEach(day => {
+                day.classList.remove('day-highlight');
+            });
+        }
+
+        // Add this function reference to window to make it available globally
+        window.dragMoveListener = dragMoveListener;
+    }
+
+    // Function to update event position in the database
+    function updateEventPosition(eventId, newDay, newStartHour, newStartMinute) {
+        const formData = new FormData();
+        formData.append('day', newDay);
+        formData.append('start_hour', newStartHour);
+        formData.append('start_minute', newStartMinute);
+        
+        console.log(`Sending update request: Day=${newDay}, Hour=${newStartHour}, Minute=${newStartMinute}`);
+        
+        fetch(`/update-schedule-event/${eventId}`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Server responded with status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                // Show success message
+                const statusIndicator = document.getElementById('drag-status');
+                statusIndicator.style.display = 'block';
+                statusIndicator.textContent = `Événement déplacé à ${newDay} à ${newStartHour}:${newStartMinute < 10 ? '0' : ''}${newStartMinute}`;
+                setTimeout(() => {
+                    statusIndicator.style.display = 'none';
+                }, 2000);
+                
+                // Reload to show the updated schedule
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                console.error('Error from server:', data.message);
+                alert('Erreur lors de la mise à jour: ' + data.message);
+                window.location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error updating event position:', error);
+            alert('Une erreur s\'est produite lors de la mise à jour de l\'événement.');
+            window.location.reload();
         });
     }
+
+    // Check for today's schedule on page load
+    fetchNotifications();
 });
 </script>
 
 <style>
-.grid-container {
-    display: grid;
-    grid-template-columns: 80px repeat(6, 1fr);
-    gap: 1px;
+.schedule-title {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.5rem;
 }
-.grid-header {
-    display: contents;
+
+/* Notifications styling */
+.notifications-panel {
+    position: absolute;
+    top: 60px;
+    right: 15px;
+    width: 350px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    z-index: 1200;
+    display: none; /* Changed from flex to none */
+    overflow: hidden;
+    max-height: 80vh;
 }
-.grid-time {
-    grid-column: 1;
+
+.notifications-panel.show {
+    display: flex;
+    flex-direction: column;
 }
-.grid-day {
-    text-align: center;
-    font-weight: bold;
-    padding: 8px;
+
+.notifications-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    border-bottom: 1px solid #eee;
     background-color: #f8f9fa;
 }
-.grid-body {
-    display: contents;
+
+.notifications-header h5 {
+    margin: 0;
+    font-size: 1rem;
 }
-.grid-time-column {
-    display: flex;
-    flex-direction: column;
+
+.notifications-body {
+    padding: 0;
+    overflow-y: auto;
+    max-height: 350px;
 }
-.grid-time-slot {
-    height: 80px;
-    border-top: 1px solid #dee2e6;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    padding-right: 8px;
-    font-size: 0.875rem;
-    color: #6c757d;
-    box-sizing: border-box; /* Ensure padding doesn't affect height calculation */
-}
-.grid-day-column {
-    display: flex;
-    flex-direction: column;
-    position: relative; /* Position container for absolute positioning of events */
-    min-height: 1280px; /* 16 hours (7-23) × 80px height */
-}
-.course-item {
-    position: absolute;
-    left: 0;
-    right: 0;
+
+.notifications-footer {
     padding: 8px;
-    border-radius: 4px;
-    border: 1px solid;
-    cursor: pointer;
-    transition: transform 0.2s;
-    box-sizing: border-box;
-    /* Make sure all text is white regardless of background color */
-    color: white;
-}
-.course-item:hover {
-    transform: scale(1.02);
-    z-index: 20 !important; /* Ensure hovered item is on top */
-}
-.bg-primary {
-    background-color: rgba(13, 110, 253, 0.9) !important;
-}
-.bg-success {
-    background-color: rgba(25, 135, 84, 0.9) !important;
-}
-.bg-purple {
-    background-color: rgba(111, 66, 193, 0.9) !important;
-}
-.bg-warning {
-    background-color: rgba(255, 193, 7, 0.9) !important;
-}
-.bg-secondary {
-    background-color: rgba(108, 117, 125, 0.9) !important;
-}
-.text-purple {
-    color: #6f42c1;
-}
-.border-purple {
-    border-color: #6f42c1;
-}
-.weekly-schedule th, .weekly-schedule td {
+    border-top: 1px solid #eee;
     text-align: center;
 }
-.day-cell {
-    padding: 0 !important;
-    height: 80px;
+
+.notification-item {
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    cursor: pointer;
+    transition: background-color 0.2s;
 }
-.resize-handle {
+
+.notification-item:hover {
+    background-color: #f9f9f9;
+}
+
+.notification-item.unread {
+    background-color: #e8f4fd;
+}
+
+.notification-item .notification-icon {
+    width: 30px;
+    height: 30px;
+    background-color: #e9ecef;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.notification-item.unread .notification-icon {
+    background-color: #3949ab;
+    color: white;
+}
+
+.notification-content {
+    flex-grow: 1;
+}
+
+.notification-title {
+    font-weight: 600;
+    margin-bottom: 3px;
+    font-size: 0.85rem;
+}
+
+.notification-message {
+    font-size: 0.8rem;
+    color: #555;
+    margin-bottom: 5px;
+}
+
+.notification-time {
+    font-size: 0.75rem;
+    color: #888;
+}
+
+.no-notifications {
+    padding: 20px;
+    text-align: center;
+    color: #666;
+}
+
+.btn-add-event {
+    background-color: #3949ab;
+    color: white;
+    border-radius: 30px;
+    padding: 8px 20px;
+    border: none;
+    box-shadow: 0 3px 5px rgba(57, 73, 171, 0.3);
+    transition: all 0.3s ease;
+}
+
+.btn-add-event:hover {
+    background-color: #303f9f;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 7px rgba(57, 73, 171, 0.4);
+    color: white;
+}
+
+.schedule-container {
+    display: flex;
+    margin-bottom: 2rem;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.schedule-timeline {
+    width: 70px; /* Slightly wider to accommodate half-hour markers */
+    background-color: #f8f9fa;
+    border-right: 1px solid #eee;
+}
+
+.timeline-header {
+    height: 50px;
+    border-bottom: 1px solid #eee;
+}
+
+.timeline-hour {
+    height: 30px; /* Changed from 60px to 30px for half-hour increments */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    font-size: 0.8rem;
+    border-bottom: 1px dashed #eee;
+    font-weight: 500;
+}
+
+.timeline-half-hour {
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    font-size: 0.75rem;
+    border-bottom: 1px solid #eee;
+    font-weight: 400;
+}
+
+.schedule-grid {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.day-headers {
+    display: flex;
+    height: 50px;
+    background-color: #f8f9fa;
+}
+
+.day-header {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    border-bottom: 1px solid #eee;
+    border-right: 1px solid #eee;
+}
+
+.day-header:last-child {
+    border-right: none;
+}
+
+.schedule-days {
+    display: flex;
+    flex-grow: 1;
+}
+
+.schedule-day {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #eee;
+    position: relative;
+    transition: background-color 0.2s ease;
+}
+
+.schedule-day.day-highlight {
+    background-color: rgba(57, 73, 171, 0.05);
+}
+
+.schedule-day:last-child {
+    border-right: none;
+}
+
+.schedule-cell {
+    height: 30px; /* Changed from 60px to 30px for half-hour increments */
+    border-bottom: 1px dashed #eee;
+    position: relative;
+}
+
+.schedule-cell.half-hour {
+    border-bottom: 1px solid #eee;
+}
+
+.event-item {
     position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 8px;
-    cursor: ns-resize;
-    background-color: rgba(255, 255, 255, 0.3);
-    border-radius: 0 0 4px 4px;
+    width: 90%;
+    left: 5%;
+    background: linear-gradient(135deg, #4fc3f7, #29b6f6);
+    border-radius: 8px;
+    color: white;
+    z-index: 10;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(41, 182, 246, 0.3);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    min-height: 30px; /* Minimum height for short events */
 }
-.resize-handle:hover {
+
+.event-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(41, 182, 246, 0.4);
+}
+
+.event-content {
+    padding: 8px;
+    padding-top: 16px; /* Extra space for drag handle */
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.event-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin: 0 0 4px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.event-details {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.event-details-compact {
+    /* For compact mode in short events */
+    display: none;
+}
+
+.event-item:hover .event-details-compact {
+    display: block;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background: inherit;
+    padding: 8px;
+    z-index: 30;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.event-type {
+    font-size: 0.8rem;
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+
+.event-time {
+    font-size: 0.8rem;
+    margin-bottom: 4px;
+}
+
+.event-location {
+    font-size: 0.75rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.btn-delete-event {
+    position: absolute;
+    right: 5px;
+    top: 5px;
+    width: 20px;
+    height: 20px;
+    background-color: rgba(255, 255, 255, 0.3);
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.7rem;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.event-item:hover .btn-delete-event {
+    opacity: 1;
+}
+
+.btn-delete-event:hover {
     background-color: rgba(255, 255, 255, 0.5);
 }
-.course-item.dragging {
-    opacity: 0.7;
+
+.event-item.expanded {
+    z-index: 20;
+}
+
+/* Course type styling */
+.event-item[data-type="Lecture"] {
+    background: linear-gradient(135deg, #4fc3f7, #29b6f6);
+    border-left: 5px solid #0288d1;
+}
+
+.event-item[data-type="Lab"] {
+    background: linear-gradient(135deg, #81c784, #4caf50);
+    border-left: 5px solid #2e7d32;
+}
+
+.event-item[data-type="Tutorial"] {
+    background: linear-gradient(135deg, #9575cd, #673ab7);
+    border-left: 5px solid #4527a0;
+}
+
+.event-item[data-type="Exam"] {
+    background: linear-gradient(135deg, #ff8a65, #ff5722);
+    border-left: 5px solid #d84315;
+}
+
+.event-item[data-type="Office Hours"] {
+    background: linear-gradient(135deg, #a1887f, #795548);
+    border-left: 5px solid #4e342e;
+}
+
+/* Make the modal more modern */
+.modal-content {
+    border-radius: 12px;
+    border: none;
+}
+
+.modal-header {
+    border-bottom: 1px solid #f0f0f0;
+    padding: 1.5rem;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    border-top: 1px solid #f0f0f0;
+    padding: 1rem 1.5rem;
+}
+
+.form-control {
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    padding: 0.6rem 0.8rem;
+}
+
+.form-control:focus {
+    box-shadow: 0 0 0 3px rgba(57, 73, 171, 0.15);
+    border-color: #3949ab;
+}
+
+/* Day navigation buttons */
+.day-nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    background-color: rgba(255, 255, 255, 0.3);
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.7rem;
+    opacity: 0;
+    transition: all 0.2s ease;
+    z-index: 15;
+    cursor: pointer;
+}
+
+.day-nav-prev {
+    left: -12px; /* Position slightly outside event */
+}
+
+.day-nav-next {
+    right: -12px; /* Position slightly outside event */
+}
+
+.event-item:hover .day-nav-btn {
+    opacity: 1;
+}
+
+.day-nav-btn:hover {
+    background-color: rgba(255, 255, 255, 0.8);
+    color: #3949ab;
+    transform: translateY(-50%) scale(1.2);
+}
+
+.event-item.is-dragging .day-nav-btn {
+    display: none; /* Hide arrows during drag */
+}
+
+/* Animation for day changing */
+@keyframes dayChange {
+    0% { transform: translateX(0); opacity: 1; }
+    50% { transform: translateX(20px); opacity: 0.5; }
+    100% { transform: translateX(40px); opacity: 0; }
+}
+
+.event-item.day-changing {
+    animation: dayChange 0.5s forwards;
+    pointer-events: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .schedule-container {
+        flex-direction: column;
+        overflow-x: auto;
+    }
+    
+    .schedule-timeline {
+        width: 100%;
+        display: flex;
+    }
+    
+    .timeline-header {
+        width: 60px;
+    }
+    
+    .timeline-hour {
+        width: 70px;
+        height: 30px;
+    }
+    
+    .timeline-half-hour {
+        width: 70px;
+        height: 30px;
+    }
+    
+    .schedule-grid {
+        overflow-x: auto;
+    }
+    
+    .day-headers {
+        min-width: 700px;
+    }
+    
+    .schedule-days {
+        min-width: 700px;
+    }
+}
+
+.event-drag-handle {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 10px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 8px 8px 0 0;
+    cursor: grab;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.event-item:hover .event-drag-handle {
+    opacity: 1;
+}
+
+.event-item.is-dragging {
+    opacity: 0.9 !important;
+    z-index: 1000 !important;
+    cursor: grabbing !important;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3) !important;
+    pointer-events: none; /* Prevent hover effects during drag */
+    transform-origin: center center; /* For smoother dragging */
+    will-change: transform; /* Performance optimization hint */
+}
+
+.schedule-cell.drag-over {
+    background-color: rgba(57, 73, 171, 0.15);
+    transition: background-color 0.2s ease;
 }
 </style>
 {% endblock %}

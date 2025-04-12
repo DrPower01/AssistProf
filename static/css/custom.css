@@ -1,0 +1,174 @@
+.schedule-reminder {
+    margin-bottom: 20px;
+    border-left: 5px solid #3949ab;
+    background-color: rgba(57, 73, 171, 0.05);
+}
+
+.schedule-reminder .alert-heading {
+    color: #3949ab;
+    font-weight: 600;
+}
+
+.schedule-reminder p {
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.schedule-message {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-bottom: 10px;
+}
+
+.schedule-pre {
+    font-family: inherit;
+    background-color: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font-size: 0.9rem;
+    color: #555;
+    white-space: pre-line;
+}
+
+.reminder-footer {
+    margin-top: 10px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    padding-top: 8px;
+    text-align: right;
+}
+
+.schedule-reminder .close {
+    position: relative;
+    top: -10px;
+}
+
+/* Dashboard today's schedule styling */
+.schedule-event-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 12px 15px;
+    transition: background-color 0.2s;
+}
+
+.schedule-event-item:hover {
+    background-color: rgba(57, 73, 171, 0.03);
+}
+
+.schedule-time-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    color: white;
+    font-weight: 500;
+    font-size: 0.8rem;
+    background-color: #3949ab;
+    white-space: nowrap;
+}
+
+.schedule-time-badge.bg-lecture {
+    background-color: #29b6f6;
+}
+
+.schedule-time-badge.bg-lab {
+    background-color: #4caf50;
+}
+
+.schedule-time-badge.bg-tutorial {
+    background-color: #673ab7;
+}
+
+.schedule-time-badge.bg-exam {
+    background-color: #ff5722;
+}
+
+.schedule-time-badge.bg-office-hours {
+    background-color: #795548;
+}
+
+/* Badge styling to match schedule items */
+.badge.bg-lecture {
+    background-color: #29b6f6;
+    color: white;
+}
+
+.badge.bg-lab {
+    background-color: #4caf50;
+    color: white;
+}
+
+.badge.bg-tutorial {
+    background-color: #673ab7;
+    color: white;
+}
+
+.badge.bg-exam {
+    background-color: #ff5722;
+    color: white;
+}
+
+.badge.bg-office-hours {
+    background-color: #795548;
+    color: white;
+}
+
+.notification-item {
+    transition: background-color 0.2s;
+}
+
+.notification-item:hover {
+    background-color: rgba(57, 73, 171, 0.03);
+}
+
+/* Dashboard grade chart styling */
+#gradesChart {
+    display: block !important;  /* Force display */
+    height: 260px !important;   /* Explicit height */
+    width: 100% !important;     /* Full width of container */
+    margin: 0 auto;             /* Center in container */
+}
+
+.card-header .card-title {
+    margin-bottom: 0;
+}
+
+/* Container for the chart */
+.chart-container {
+    position: relative;
+    height: 260px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+    #gradesChart, .chart-container {
+        height: 300px !important;
+    }
+}
+
+/* Dashboard statistics styling */
+.stat-card {
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+    transition: transform 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.progress-stats p {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}

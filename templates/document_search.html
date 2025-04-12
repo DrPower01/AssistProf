@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+
+{% block title %}Document Search Results{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-search me-2"></i> Document Search Results
+                    </h5>
+                    <div class="d-flex align-items-center">
+                        <form action="{{ url_for('search_documents') }}" method="GET" class="d-flex">
+                            <div class="input-group me-2" style="max-width: 300px;">
+                                <input type="text" name="query" class="form-control" placeholder="Search documents..." 
+                                       value="{{ search_query|default('', true) }}">
+                                <select name="category" class="form-select" style="max-width: 120px;">
+                                    <option value="all" {% if category == 'all' %}selected{% endif %}>All</option>
+                                    <option value="cours" {% if category == 'cours' %}selected{% endif %}>Cours</option>
+                                    <option value="td" {% if category == 'td' %}selected{% endif %}>TD</option>
+                                    <option value="tp" {% if category == 'tp' %}selected{% endif %}>TP</option>
+                                    <option value="autre" {% if category == 'autre' %}selected{% endif %}>Autre</option>
+                                </select>
+                                <button class="btn btn-primary" type="submit">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                            <a href="{{ url_for('documents') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Clear
+                            </a>
+                        </form>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if search_query %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Showing results for: <strong>"{{ search_query }}"</strong>
+                        {% if category != 'all' %}
+                            in category: <strong>{{ category|title }}</strong>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50px;">Format</th>
+                                    <th>Title</th>
+                                    <th>Category</th>
+                                    <th>Description</th>
+                                    <th>Upload Date</th>
+                                    <th>Size</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="searchResultsList">
+                                {% for doc in documents %}
+                                <tr id="document-{{ doc.id }}" data-category="{{ doc.category }}">
+                                    <td class="text-center">
+                                        {% set ext = doc.filename.split('.')[-1].lower() %}
+                                        {% if ext in ['pdf'] %}
+                                            <i class="fas fa-file-pdf text-danger" title="PDF Document"></i>
+                                        {% elif ext in ['doc', 'docx'] %}
+                                            <i class="fas fa-file-word text-primary" title="Word Document"></i>
+                                        {% elif ext in ['xls', 'xlsx', 'csv'] %}
+                                            <i class="fas fa-file-excel text-success" title="Spreadsheet"></i>
+                                        {% elif ext in ['ppt', 'pptx'] %}
+                                            <i class="fas fa-file-powerpoint text-warning" title="Presentation"></i>
+                                        {% elif ext in ['jpg', 'jpeg', 'png', 'gif', 'bmp'] %}
+                                            <i class="fas fa-file-image text-info" title="Image"></i>
+                                        {% elif ext in ['zip', 'rar', '7z', 'tar', 'gz'] %}
+                                            <i class="fas fa-file-archive text-secondary" title="Archive"></i>
+                                        {% elif ext in ['txt', 'md'] %}
+                                            <i class="fas fa-file-alt text-secondary" title="Text Document"></i>
+                                        {% else %}
+                                            <i class="fas fa-file text-muted" title="File"></i>
+                                        {% endif %}
+                                        <div class="small text-muted">{{ ext|upper }}</div>
+                                    </td>
+                                    <td>{{ doc.title }}</td>
+                                    <td>{{ doc.category|title }}</td>
+                                    <td>{{ doc.description or '-' }}</td>
+                                    <td>{{ doc.upload_date.strftime('%Y-%m-%d') }}</td>
+                                    <td>{{ doc.size_formatted }}</td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="/download-document/{{ doc.id }}" class="btn btn-sm btn-success">
+                                                <i class="bi bi-download"></i> Download
+                                            </a>
+                                            <button class="btn btn-sm btn-danger delete-doc-btn" data-document-id="{{ doc.id }}">
+                                                <i class="bi bi-trash"></i> Delete
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    {% if documents|length == 0 %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No documents found</h5>
+                        <p class="text-muted">
+                            {% if search_query %}
+                                No documents match your search criteria.
+                            {% else %}
+                                You haven't uploaded any documents yet.
+                            {% endif %}
+                        </p>
+                        <a href="{{ url_for('documents') }}" class="btn btn-primary mt-2">
+                            <i class="fas fa-arrow-left me-2"></i> Back to Documents
+                        </a>
+                    </div>
+                    {% endif %}
+                    
+                    {% if documents|length > 0 %}
+                    <div class="mt-3">
+                        <p class="text-muted">
+                            Found {{ documents|length }} document{% if documents|length != 1 %}s{% endif %}
+                        </p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Delete document functionality
+        document.querySelectorAll('.delete-doc-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const documentId = this.dataset.documentId;
+                if (confirm('Are you sure you want to delete this document? This action cannot be undone.')) {
+                    fetch(`/delete-document/${documentId}`, {
+                        method: 'POST'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            document.getElementById(`document-${documentId}`).remove();
+                            
+                            // Update the document count
+                            const remainingDocs = document.querySelectorAll('#searchResultsList tr').length;
+                            if (remainingDocs === 0) {
+                                // No documents left, refresh to show "no documents" message
+                                window.location.reload();
+                            }
+                            
+                            alert('Document deleted successfully!');
+                        } else {
+                            alert('Error: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred. Please try again.');
+                    });
+                }
+            });
+        });
+
+        // Highlight search terms
+        const searchQuery = "{{ search_query|default('', true) }}".toLowerCase();
+        if (searchQuery) {
+            const contentCells = document.querySelectorAll('#searchResultsList td:nth-child(2), #searchResultsList td:nth-child(4)');
+            
+            contentCells.forEach(cell => {
+                const text = cell.textContent;
+                if (text.toLowerCase().includes(searchQuery)) {
+                    const regex = new RegExp(`(${searchQuery})`, 'gi');
+                    cell.innerHTML = text.replace(regex, '<mark>$1</mark>');
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

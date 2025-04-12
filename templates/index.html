@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AssistProf - Assistant Virtuel pour Enseignants</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <style>
+        .hero {
+            background-color: #f8f9fa;
+            padding: 120px 0 100px;
+            margin-bottom: 0;
+            position: relative;
+            overflow: hidden;
+            min-height: 80vh;
+            display: flex;
+            align-items: center;
+        }
+        
+        .hero-illustration {
+            position: absolute;
+            width: 45%;
+            max-width: 600px;
+            right: -5%;
+            bottom: -5%;
+            opacity: 0.85;
+            z-index: 0;
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1));
+        }
+        
+        .wave-bg {
+            background: linear-gradient(135deg, #4361ee, #3a56d4);
+            color: white;
+            position: relative;
+        }
+        
+        .wave-bg:after {
+            content: "";
+            position: absolute;
+            bottom: -2px; /* Ensure no gap */
+            left: 0;
+            width: 100%;
+            height: 70px;
+            background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 1200 120" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"><path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" fill="%23ffffff"></path></svg>');
+            background-size: cover;
+            background-repeat: no-repeat;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        .hero-title {
+            font-size: calc(1.8rem + 1.5vw);
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+            letter-spacing: -0.01em;
+        }
+        
+        .hero-subtitle {
+            font-size: calc(1rem + 0.5vw);
+            margin-bottom: 2rem;
+            opacity: 0.9;
+            line-height: 1.5;
+            font-weight: 400;
+        }
+        
+        .hero-buttons {
+            margin-top: 2rem;
+        }
+        
+        .btn-hero {
+            padding: 0.8rem 2rem;
+            font-weight: 500;
+            border-radius: 50px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .btn-hero-primary {
+            background-color: white;
+            color: #3a56d4;
+            border: none;
+        }
+        
+        .btn-hero-outline {
+            border: 2px solid rgba(255,255,255,0.8);
+            background-color: transparent;
+            color: white;
+        }
+        
+        .btn-hero-outline:hover {
+            background-color: rgba(255,255,255,0.1);
+            color: white;
+        }
+        
+        @media (max-width: 991px) {
+            .hero {
+                padding: 100px 0 120px;
+                text-align: center;
+            }
+            
+            .hero-illustration {
+                position: relative;
+                width: 80%;
+                max-width: 400px;
+                margin: 2rem auto 0;
+                right: auto;
+                bottom: auto;
+                display: block;
+            }
+            
+            .hero-content {
+                margin-bottom: 30px;
+            }
+        }
+        
+        .djibouti-triangle {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 150px solid transparent;
+            border-right: 150px solid transparent;
+            border-bottom: 260px solid rgba(216, 75, 0, 0.1);
+            z-index: 0;
+            animation: rotate 15s linear infinite;
+        }
+
+        .djibouti-circle {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(23, 104, 175, 0.1) 0%, rgba(23, 104, 175, 0) 70%);
+            animation: pulse 4s ease-in-out infinite;
+            z-index: 0;
+        }
+
+        .djibouti-pattern {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: repeating-linear-gradient(
+                45deg, 
+                rgba(255, 255, 255, 0.05) 0px, 
+                rgba(255, 255, 255, 0.05) 10px, 
+                transparent 10px, 
+                transparent 20px
+            );
+            z-index: 0;
+            animation: slide 20s linear infinite;
+        }
+
+        .horn-shape {
+            position: absolute;
+            bottom: -50px;
+            left: 5%;
+            width: 300px;
+            height: 250px;
+            background-color: rgba(10, 148, 86, 0.1);
+            clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
+            animation: hornFloat 6s ease-in-out infinite;
+            z-index: 0;
+            transform: rotate(15deg);
+        }
+
+        .star-container {
+            position: absolute;
+            top: 10%;
+            left: 15%;
+            animation: starFloat 7s ease-in-out infinite;
+            z-index: 0;
+        }
+
+        .djibouti-star {
+            position: relative;
+            display: block;
+            width: 0;
+            height: 0;
+            border-right: 30px solid transparent;
+            border-bottom: 21px solid rgba(255, 255, 255, 0.6);
+            border-left: 30px solid transparent;
+            transform: rotate(35deg);
+        }
+        
+        .djibouti-star:before {
+            border-bottom: 24px solid rgba(255, 255, 255, 0.6);
+            border-left: 9px solid transparent;
+            border-right: 9px solid transparent;
+            position: absolute;
+            height: 0;
+            width: 0;
+            top: -13.5px;
+            left: -18px;
+            display: block;
+            content: '';
+            transform: rotate(-35deg);
+        }
+        
+        .djibouti-star:after {
+            position: absolute;
+            display: block;
+            top: 0.75px;
+            left: -31.5px;
+            width: 0;
+            height: 0;
+            border-right: 30px solid transparent;
+            border-bottom: 21px solid rgba(255, 255, 255, 0.6);
+            border-left: 30px solid transparent;
+            transform: rotate(-70deg);
+            content: '';
+        }
+
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.2); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 0.5; }
+        }
+
+        @keyframes slide {
+            0% { background-position: 0 0; }
+            100% { background-position: 500px 500px; }
+        }
+
+        @keyframes hornFloat {
+            0% { transform: translateY(0) rotate(15deg); }
+            50% { transform: translateY(-20px) rotate(15deg); }
+            100% { transform: translateY(0) rotate(15deg); }
+        }
+
+        @keyframes starFloat {
+            0% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(10deg); }
+            100% { transform: translateY(0) rotate(0deg); }
+        }
+        
+        .feature-icon {
+            font-size: 2.5rem;
+            color: #0d6efd;
+            margin-bottom: 15px;
+        }
+        
+        .feature-card {
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            height: 100%;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            background-color: #fff;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+        }
+        
+        .feature-illustration {
+            max-width: 100px;
+            margin-bottom: 15px;
+        }
+        
+        .cta-section {
+            background-color: #e9ecef;
+            padding: 60px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .cta-illustration {
+            position: absolute;
+            width: 300px;
+            left: 5%;
+            bottom: 0;
+            opacity: 0.8;
+        }
+        
+        .btn-primary {
+            background-color: #4361ee;
+            border-color: #4361ee;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background-color: #3a56d4;
+            border-color: #3a56d4;
+            transform: translateY(-2px);
+        }
+        
+        .scroll-reveal {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        
+        .scroll-reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .wave-bg {
+            background: linear-gradient(to right, #4361ee, #3a56d4);
+            padding-top: 100px;
+            padding-bottom: 50px;
+            color: white;
+            position: relative;
+        }
+        
+        .wave-bg:after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 50px;
+            background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 1200 120" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"><path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" fill="%23ffffff"></path></svg>');
+            background-size: cover;
+            background-repeat: no-repeat;
+        }
+        
+        .floating {
+            animation: floating 3s ease-in-out infinite;
+        }
+        
+        @keyframes floating {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+            100% { transform: translateY(0px); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container">
+            <a class="navbar-brand" href="#">AssistProf</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#features">Fonctionnalités</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-primary" href="{{ url_for('login') }}">Connexion</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero wave-bg">
+        <!-- Djiboutian-inspired animation elements -->
+        <div class="djibouti-pattern"></div>
+        <div class="djibouti-triangle" style="top: 10%; left: 20%;"></div>
+        <div class="djibouti-triangle" style="bottom: 20%; right: 10%; transform: rotate(180deg);"></div>
+        <div class="djibouti-circle" style="top: 15%; left: 30%;"></div>
+        <div class="djibouti-circle" style="bottom: 20%; right: 20%;"></div>
+        <div class="horn-shape"></div>
+        <div class="star-container">
+            <div class="djibouti-star"></div>
+        </div>
+        
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-7">
+                    <div class="hero-content text-lg-start text-center">
+                        <h1 class="hero-title animate__animated animate__fadeInDown">Assistant Virtuel pour Enseignants du Supérieur</h1>
+                        <p class="hero-subtitle animate__animated animate__fadeIn animate__delay-1s">Simplifiez la gestion de vos tâches pédagogiques, centralisez vos ressources et analysez les performances de vos étudiants de manière intuitive.</p>
+                        <div class="hero-buttons animate__animated animate__fadeInUp animate__delay-1s">
+                            <a href="{{ url_for('login') }}" class="btn btn-hero btn-hero-primary me-2">Commencer</a>
+                            <a href="#features" class="btn btn-hero btn-hero-outline">En savoir plus</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-5 d-none d-lg-block">
+                    <img src="https://via.placeholder.com/600x500?text=Teacher+Illustration" alt="Enseignant" class="hero-illustration floating animate__animated animate__fadeIn animate__delay-2s">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-5">
+        <div class="container">
+            <h2 class="text-center mb-5 scroll-reveal">🚀 Fonctionnalités principales</h2>
+            
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="feature-card scroll-reveal">
+                        <div class="text-center">
+                            <img src="https://via.placeholder.com/150x150?text=Calendar" alt="Calendrier" class="feature-illustration floating">
+                            <i class="fas fa-calendar-alt feature-icon"></i>
+                            <h3>📅 Gestion des plannings</h3>
+                        </div>
+                        <p>Saisie des cours et événements avec créneaux horaires et notifications automatiques pour ne jamais manquer une échéance importante.</p>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="feature-card scroll-reveal">
+                        <div class="text-center">
+                            <img src="https://via.placeholder.com/150x150?text=Resources" alt="Ressources" class="feature-illustration floating">
+                            <i class="fas fa-book feature-icon"></i>
+                            <h3>📚 Ressources pédagogiques</h3>
+                        </div>
+                        <p>Téléversement et organisation des documents pédagogiques avec classification par dossiers ou tags pour une recherche rapide.</p>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="feature-card scroll-reveal">
+                        <div class="text-center">
+                            <img src="https://via.placeholder.com/150x150?text=Analytics" alt="Analytique" class="feature-illustration floating">
+                            <i class="fas fa-chart-line feature-icon"></i>
+                            <h3>📊 Suivi des étudiants</h3>
+                        </div>
+                        <p>Importation des résultats via CSV et génération de graphiques pour analyser les performances (moyennes, taux de réussite, etc).</p>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="feature-card scroll-reveal">
+                        <div class="text-center">
+                            <img src="https://via.placeholder.com/150x150?text=AI+Bot" alt="Robot IA" class="feature-illustration floating">
+                            <i class="fas fa-robot feature-icon"></i>
+                            <h3>🤖 FAQ intelligente</h3>
+                        </div>
+                        <p>Système de réponse automatique aux questions fréquentes avec une base de données évolutive pour améliorer l'efficacité pédagogique.</p>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="feature-card scroll-reveal">
+                        <div class="text-center">
+                            <img src="https://via.placeholder.com/150x150?text=UI/UX" alt="Interface" class="feature-illustration floating">
+                            <i class="fas fa-desktop feature-icon"></i>
+                            <h3>💻 Interface ergonomique</h3>
+                        </div>
+                        <p>Interface web conviviale et responsive, accessible sur PC et tablettes pour une expérience utilisateur optimale.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Call to Action -->
+    <section class="cta-section">
+        <div class="container text-center">
+            <img src="https://via.placeholder.com/300x200?text=Success" alt="Succès" class="cta-illustration floating d-none d-lg-block">
+            <h2 class="mb-4 scroll-reveal">Prêt à optimiser votre gestion pédagogique?</h2>
+            <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg scroll-reveal">Commencer maintenant</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4">
+        <div class="container text-center">
+            <p>© 2023 AssistProf - Tous droits réservés</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Reveal animations on scroll
+        document.addEventListener('DOMContentLoaded', function() {
+            const revealElements = document.querySelectorAll('.scroll-reveal');
+            
+            function revealOnScroll() {
+                revealElements.forEach(function(element) {
+                    const elementTop = element.getBoundingClientRect().top;
+                    const windowHeight = window.innerHeight;
+                    
+                    if (elementTop < windowHeight - 100) {
+                        element.classList.add('active');
+                    }
+                });
+            }
+            
+            window.addEventListener('scroll', revealOnScroll);
+            // Initial check
+            revealOnScroll();
+        });
+    </script>
+</body>
+</html>
