@@ -46,14 +46,14 @@ with app.app_context():
     db.create_all()
     logger.info("Database tables created or verified successfully")
 
-# Configure Flask-Mail for Mailtrap (free and reliable for testing)
-app.config['MAIL_SERVER'] = 'sandbox.smtp.mailtrap.io'
-app.config['MAIL_PORT'] = 2525
-app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', '2596f6a8ff9cb3')
-app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', 'f8e05aef69bcc0')
+# Configure Flask-Mail for Gmail
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', 'assistprof.djib@gmail.com')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', 'jgfx ryzu muvn wbjj')  # App password should be provided in environment
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = False
-app.config['MAIL_DEFAULT_SENDER'] = 'assistprof@example.com'
+app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_USERNAME', 'assistprof.djib@gmail.com')
 app.config['MAIL_DEBUG'] = not os.environ.get('RENDER', False)  # Disable mail debug in production
 
 # Initialize Mail after configuration
