@@ -112,31 +112,35 @@ def signup_route(mail):
     return render_template('signup.html')
 
 def verify_otp_route(user_id):
+    """Handle OTP verification"""
     user = Enseignant.query.get(user_id)
     
     if not user:
-        flash('User not found.')
+        flash('Invalid user. Please try signing up again.', 'danger')
+        return redirect(url_for('signup'))
+    
+    if user.is_verified:
+        flash('Account already verified. Please log in.', 'info')
         return redirect(url_for('login'))
     
     if request.method == 'POST':
         submitted_otp = request.form.get('otp')
+        stored_otp = session.get('otp')
         
-        if user.otp == submitted_otp:
-            user.verified = True
-            user.otp = None  # Clear OTP after verification
+        if submitted_otp == stored_otp:
+            # OTP matches, verify the user
+            user.is_verified = True
             db.session.commit()
             
-            # Clear session OTP data if it exists
-            if 'display_otp' in session:
-                session.pop('display_otp', None)
-            if 'email_error' in session:
-                session.pop('email_error', None)
-                
-            flash('Email verified successfully. Please login.')
+            # Clear OTP from session
+            session.pop('otp', None)
+            
+            flash('Account verified successfully! You can now log in.', 'success')
             return redirect(url_for('login'))
         else:
-            flash('Invalid verification code.')
+            flash('Invalid verification code. Please try again.', 'danger')
     
+    # Don't show OTP for debugging anymore
     return render_template('verify_otp.html', user_id=user_id)
 
 def logout_route():
