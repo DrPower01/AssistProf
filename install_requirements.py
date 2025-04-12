@@ -13,7 +13,7 @@ def install_requirements():
         "flask",
         "flask-sqlalchemy",
         "flask-login", 
-        "flask-mail",
+        "flask-mail==0.10.0",  # Specify the available version
         "mysql-connector-python",  # Use this instead of MySQLdb
         "sqlalchemy-utils",
         "werkzeug"
