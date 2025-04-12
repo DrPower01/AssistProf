@@ -1333,4 +1333,12 @@ if __name__ == "__main__":
     # Create uploads directory if it doesn't exist
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
     
-    app.run(debug=True)
+    # Get port from environment variable for Render deployment
+    port = int(os.environ.get('PORT', 5000))
+    
+    # Run app on all interfaces (0.0.0.0) and use the correct port
+    # Disable debug mode when running on Render
+    if is_render:
+        app.run(host='0.0.0.0', port=port, debug=False)
+    else:
+        app.run(host='0.0.0.0', port=port, debug=True)
