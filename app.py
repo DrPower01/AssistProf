@@ -22,14 +22,22 @@ logger = logging.getLogger(__name__)
 # Create Flask app
 app = Flask(__name__)
 
-# Configure database for Always Data
+# Check if running on Render (Render sets this environment variable)
+is_render = os.environ.get('RENDER', False)
+
+# Configure database connections
 try:
-    # Using Always Data MySQL database
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://409015:@mysql-409015.alwaysdata.net/assistprof_db'
-    logger.info("Using Always Data MySQL database")
+    if is_render:
+        # When deployed on Render, use SQLite instead
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///assistprof.db'
+        logger.info("Running on Render, using SQLite database")
+    else:
+        # In development or other environments, try Always Data
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://409015:@mysql-409015.alwaysdata.net/assistprof_db'
+        logger.info("Using Always Data MySQL database")
 except Exception as e:
     logger.error(f"Database configuration error: {e}")
-    # Fallback to SQLite for development if everything else fails
+    # Ultimate fallback to SQLite
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///assistprof.db'
     logger.info("Falling back to SQLite")
 
