@@ -16,12 +16,20 @@ from dotenv import load_dotenv
 # Load environment variables from .env file in development
 load_dotenv()
 
-# Import auth related functions
-from auth import init_login_manager, login_route, logout_route, signup_route, verify_otp_route
-
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Verify email credentials are loaded correctly
+email_username = os.environ.get('MAIL_USERNAME')
+email_password = os.environ.get('MAIL_PASSWORD')
+if not email_username or not email_password:
+    logger.warning("Email credentials not found in environment variables! Check your .env file.")
+else:
+    logger.info(f"Email credentials loaded for: {email_username}")
+
+# Import auth related functions
+from auth import init_login_manager, login_route, logout_route, signup_route, verify_otp_route
 
 # Create Flask app
 app = Flask(__name__)
@@ -49,11 +57,11 @@ with app.app_context():
 # Configure Flask-Mail for Gmail
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
-app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
-app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
+app.config['MAIL_USERNAME'] = email_username
+app.config['MAIL_PASSWORD'] = email_password
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = False
-app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_USERNAME')
+app.config['MAIL_DEFAULT_SENDER'] = email_username
 app.config['MAIL_DEBUG'] = not os.environ.get('RENDER', False)  # Disable mail debug in production
 
 # Initialize Mail after configuration
