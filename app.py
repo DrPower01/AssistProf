@@ -41,6 +41,11 @@ from models import db, Enseignant, EmploiDuTemps, Etudiants, Document, Notificat
 # Initialize extensions with app
 db.init_app(app)
 
+# Create all database tables if they don't exist
+with app.app_context():
+    db.create_all()
+    logger.info("Database tables created or verified successfully")
+
 # Configure Flask-Mail for Gmail
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
