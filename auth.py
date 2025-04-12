@@ -97,7 +97,7 @@ def signup_route(mail):
                 flash(f'Could not send verification email. Please use this verification code instead: {otp}')
             
             # Redirect to verification page
-            return redirect(url_for('verify_otp', user_id=new_user.ID_EN))
+            return redirect(url_for('verify_otp_route', user_id=new_user.ID_EN))
         except Exception as e:
             # Roll back the session
             db.session.rollback()
