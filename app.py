@@ -22,11 +22,11 @@ logger = logging.getLogger(__name__)
 # Create Flask app
 app = Flask(__name__)
 
-# Configure database - use mysql-connector-python since MySQLdb isn't installed
+# Configure database for Always Data
 try:
-    # Try mysql-connector-python explicitly
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://root:@localhost/assistprof'
-    logger.info("Using mysql-connector-python")
+    # Using Always Data MySQL database
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://409015:@mysql-409015.alwaysdata.net/assistprof_db'
+    logger.info("Using Always Data MySQL database")
 except Exception as e:
     logger.error(f"Database configuration error: {e}")
     # Fallback to SQLite for development if everything else fails
