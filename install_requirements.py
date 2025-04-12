@@ -24,7 +24,8 @@ def install_requirements():
         "flask-mail==0.10.0",  # Specify the available version
         "mysql-connector-python",  # Use this instead of MySQLdb
         "sqlalchemy-utils",
-        "werkzeug"
+        "werkzeug",
+        "wtforms==3.0.1"  # Add wtforms package
     ]
     
     # Install each package
