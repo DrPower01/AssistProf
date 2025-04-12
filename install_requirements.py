@@ -18,14 +18,16 @@ def install_requirements():
     
     # Define the packages we need
     requirements = [
-        "flask",
-        "flask-sqlalchemy",
-        "flask-login", 
-        "flask-mail==0.10.0",  # Specify the available version
-        "mysql-connector-python",  # Use this instead of MySQLdb
-        "sqlalchemy-utils",
-        "werkzeug",
-        "wtforms==3.0.1"  # Add wtforms package
+        "flask==2.3.3",
+        "flask-sqlalchemy==3.1.1",
+        "flask-migrate==4.0.4",
+        "flask-login==0.6.2", 
+        "flask-mail==0.10.0",
+        "sqlalchemy-utils==0.40.0",
+        "werkzeug==2.3.7",
+        "python-dotenv==1.0.0",
+        "wtforms==3.0.1",
+        "gunicorn==21.2.0"
     ]
     
     # Install each package
@@ -46,6 +48,7 @@ def install_requirements():
         print("You may need to install these packages manually.")
     else:
         print("\nAll required packages installed successfully!")
+        print("\nSQLite database will be created automatically when you run the application.")
         
     print("\nYou can now run the application with:")
     print("python app.py")

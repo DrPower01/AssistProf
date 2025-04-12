@@ -11,6 +11,10 @@ import os
 import logging
 import csv
 import io
+from dotenv import load_dotenv
+
+# Load environment variables from .env file in development
+load_dotenv()
 
 # Import auth related functions
 from auth import init_login_manager, login_route, logout_route, signup_route, verify_otp_route
@@ -22,27 +26,14 @@ logger = logging.getLogger(__name__)
 # Create Flask app
 app = Flask(__name__)
 
-# Check if running on Render (Render sets this environment variable)
-is_render = os.environ.get('RENDER', False)
+# Set the base directory for SQLite database
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+db_path = os.path.join(BASE_DIR, 'assistprof.db')
 
-# Configure database connections
-try:
-    if is_render:
-        # When deployed on Render, use SQLite instead
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///assistprof.db'
-        logger.info("Running on Render, using SQLite database")
-    else:
-        # In development or other environments, try Always Data
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://409015:@mysql-409015.alwaysdata.net/assistprof_db'
-        logger.info("Using Always Data MySQL database")
-except Exception as e:
-    logger.error(f"Database configuration error: {e}")
-    # Ultimate fallback to SQLite
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///assistprof.db'
-    logger.info("Falling back to SQLite")
-
+# Configure database connection for SQLite
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.secret_key = 'xxxxyyyyyzzzzz'
+app.secret_key = os.environ.get('SECRET_KEY', 'xxxxyyyyyzzzzz')
 
 # Import db and models
 from models import db, Enseignant, EmploiDuTemps, Etudiants, Document, Notification
@@ -53,12 +44,12 @@ db.init_app(app)
 # Configure Flask-Mail for Gmail
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
-app.config['MAIL_USERNAME'] = 'assistprof.djib@gmail.com'
-app.config['MAIL_PASSWORD'] = 'jgfx ryzu muvn wbjj'  # Make sure this is a valid app password
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', 'assistprof.djib@gmail.com')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', '')  # App password should be set as environment variable
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = False
-app.config['MAIL_DEFAULT_SENDER'] = 'assistprof.djib@gmail.com'
-app.config['MAIL_DEBUG'] = True  # Enable mail debug mode
+app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_USERNAME', 'assistprof.djib@gmail.com')
+app.config['MAIL_DEBUG'] = not os.environ.get('RENDER', False)  # Disable mail debug in production
 
 # Initialize Mail after configuration
 mail = Mail(app)
@@ -1316,15 +1307,6 @@ if __name__ == "__main__":
     # Create the database engine with the configured URI
     engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'])
     
-    # Create the database if needed (for MySQL)
-    if 'mysql' in app.config['SQLALCHEMY_DATABASE_URI']:
-        try:
-            if not database_exists(engine.url):
-                create_database(engine.url)
-            logger.info("Database exists or was created successfully")
-        except Exception as e:
-            logger.error(f"Database creation error: {e}")
-    
     # Create all tables
     with app.app_context():
         db.create_all()
@@ -1338,7 +1320,4 @@ if __name__ == "__main__":
     
     # Run app on all interfaces (0.0.0.0) and use the correct port
     # Disable debug mode when running on Render
-    if is_render:
-        app.run(host='0.0.0.0', port=port, debug=False)
-    else:
-        app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(host='0.0.0.0', port=port, debug=not os.environ.get('RENDER', False))
