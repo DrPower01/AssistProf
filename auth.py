@@ -48,44 +48,60 @@ def login_route():
 
 def signup_route(mail):
     if request.method == 'POST':
-        nom = request.form.get('nom')
-        prenom = request.form.get('prenom')
-        email = request.form.get('email')
-        password = request.form.get('password')
-        
-        existing_user = Enseignant.query.filter_by(Email_EN=email).first()
-        if existing_user:
-            flash('Email already exists.')
-            return redirect(url_for('signup'))
-        
-        # Generate OTP
-        otp = ''.join([str(random.randint(0, 9)) for _ in range(6)])
-        
-        # Create user
-        hashed_password = generate_password_hash(password)
-        new_user = Enseignant(
-            Nom_EN=nom,
-            Prenom_EN=prenom,
-            Email_EN=email,
-            Mot_de_Passe=hashed_password,
-            otp=otp
-        )
-        
-        db.session.add(new_user)
-        db.session.commit()
-        
-        # Send OTP email
         try:
-            from flask_mail import Message
-            msg = Message('Email Verification', recipients=[email])
-            msg.body = f'Your verification code is: {otp}'
-            mail.send(msg)
-            flash('Please check your email for verification code.')
+            nom = request.form.get('nom')
+            prenom = request.form.get('prenom')
+            email = request.form.get('email')
+            password = request.form.get('password')
+            
+            # Validate input fields
+            if not all([nom, prenom, email, password]):
+                flash('All fields are required')
+                return redirect(url_for('signup'))
+            
+            existing_user = Enseignant.query.filter_by(Email_EN=email).first()
+            if existing_user:
+                flash('Email already exists.')
+                return redirect(url_for('signup'))
+            
+            # Generate OTP
+            otp = ''.join([str(random.randint(0, 9)) for _ in range(6)])
+            
+            # Create user
+            hashed_password = generate_password_hash(password)
+            new_user = Enseignant(
+                Nom_EN=nom,
+                Prenom_EN=prenom,
+                Email_EN=email,
+                Mot_de_Passe=hashed_password,
+                otp=otp
+            )
+            
+            db.session.add(new_user)
+            db.session.commit()
+            
+            # Send OTP email
+            try:
+                from flask_mail import Message
+                msg = Message('Email Verification', recipients=[email])
+                msg.body = f'Your verification code is: {otp}'
+                mail.send(msg)
+                flash('Please check your email for verification code.')
+            except Exception as e:
+                logger.error(f"Email send error: {e}")
+                flash(f'Could not send verification email: {str(e)}')
+            
+            return redirect(url_for('verify_otp', user_id=new_user.ID_EN))
         except Exception as e:
-            logger.error(f"Email send error: {e}")
-            flash('Could not send verification email. Please try again.')
-        
-        return redirect(url_for('verify_otp', user_id=new_user.ID_EN))
+            # Roll back the session
+            db.session.rollback()
+            
+            # Log the error with details
+            logger.error(f"Signup error: {str(e)}")
+            
+            # Show a user-friendly error message
+            flash(f'An error occurred during signup: {str(e)}. Please try again.')
+            return redirect(url_for('signup'))
     
     return render_template('signup.html')
 

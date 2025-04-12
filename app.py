@@ -45,7 +45,7 @@ db.init_app(app)
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', 'assistprof.djib@gmail.com')
-app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', '')  # App password should be set as environment variable
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', 'naruto4567')  # Default password for development
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = False
 app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_USERNAME', 'assistprof.djib@gmail.com')

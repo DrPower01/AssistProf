@@ -13,7 +13,7 @@ class Enseignant(db.Model, UserMixin):
     Email_EN = db.Column(db.String(100), unique=True, nullable=False)
     Mot_de_Passe = db.Column(db.String(255), nullable=False)
     verified = db.Column(db.Boolean, default=False)
-    role = db.Column(db.Enum('teacher', 'admin', name='role_types'), nullable=False, default='teacher')
+    role = db.Column(db.String(10), nullable=False, default='teacher')  # Changed to String for SQLite compatibility
     fichiers = db.relationship('Fichier', backref='enseignant', lazy='dynamic')
     otp = db.Column(db.String(6), nullable=True)
     
@@ -44,12 +44,6 @@ class FAQ(db.Model):
     nb_demander = db.Column(db.Integer, default=0)
     ID_EN = db.Column(db.Integer, db.ForeignKey('enseignant.ID_EN'), nullable=True)
     enseignant = db.relationship('Enseignant', backref='faqs')
-
-class Notification(db.Model):
-    ID_Notif = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    Contexte = db.Column(db.Text, nullable=False)
-    ID_EN = db.Column(db.Integer, db.ForeignKey('enseignant.ID_EN'), nullable=True)
-    enseignant = db.relationship('Enseignant', backref='notifications')
 
 class Etudiants(db.Model):
     Matricule_ET = db.Column(db.String(20), primary_key=True, unique=True)
@@ -89,7 +83,6 @@ class Document(db.Model):
     # Relationship with the user
     user = db.relationship('Enseignant', backref=db.backref('documents', lazy=True))
 
-# Add Notification model
 class Notification(db.Model):
     __tablename__ = 'notifications'
     
@@ -100,10 +93,11 @@ class Notification(db.Model):
     type = db.Column(db.String(50), nullable=False)  # 'schedule', 'system', etc.
     created_at = db.Column(db.DateTime, default=datetime.now, nullable=False)
     is_read = db.Column(db.Boolean, default=False)
-    reference_id = db.Column(db.Integer)  # Optional: to store related ID (e.g., event ID)
+    reference_id = db.Column(db.Integer, nullable=True)  # Optional: to store related ID (e.g., event ID)
+    Contexte = db.Column(db.Text, nullable=True)  # Added from the old model for compatibility
     
     # Relationship with user
-    user = db.relationship('Enseignant', backref=db.backref('notifications', lazy=True))
+    user = db.relationship('Enseignant', backref=db.backref('user_notifications', lazy=True))
 
 def init_db(app):
     from sqlalchemy import create_engine
