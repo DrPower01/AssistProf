@@ -1,108 +1,63 @@
 {% extends 'base.html' %}
 
-{% block title %}Gestion des Documents{% endblock %}
+{% block title %}Document Search Results{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="row">
-        <!-- Document Upload Form -->
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title">Téléverser un Document</h5>
-                </div>
-                <div class="card-body">
-                    <form id="uploadDocumentForm" enctype="multipart/form-data">
-                        <div class="mb-3">
-                            <label for="documentTitle" class="form-label">Titre du Document</label>
-                            <input type="text" class="form-control" id="documentTitle" name="title" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="documentCategory" class="form-label">Catégorie</label>
-                            <select class="form-select" id="documentCategory" name="category">
-                                <option value="cours">Cours</option>
-                                <option value="td">TD</option>
-                                <option value="tp">TP</option>
-                                <option value="autre">Autre</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="documentFile" class="form-label">Sélectionner un Fichier</label>
-                            <input class="form-control" type="file" id="documentFile" name="document" required>
-                            <div class="form-text">Taille maximale: 10Mo</div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="documentDescription" class="form-label">Description (optionnel)</label>
-                            <textarea class="form-control" id="documentDescription" name="description" rows="3"></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-cloud-upload"></i> Téléverser
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Documents List -->
-        <div class="col-md-8">
+        <div class="col-12">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">Documents</h5>
-                    <div class="input-group" style="max-width: 300px;">
-                        <form action="/search-documents" method="GET" class="d-flex w-100">
-                            <input type="text" name="query" id="searchDocumentInput" class="form-control" 
-                                   placeholder="Rechercher des documents..." value="{{ search_query|default('', true) }}">
-                            <select name="category" class="form-select" style="max-width: 100px;">
-                                <option value="all">Tous</option>
-                                <option value="cours">Cours</option>
-                                <option value="td">TD</option>
-                                <option value="tp">TP</option>
-                                <option value="autre">Autre</option>
-                            </select>
-                            <button class="btn btn-outline-secondary" type="submit" id="searchDocumentButton">
-                                <i class="fas fa-search"></i>
-                            </button>
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-search me-2"></i> Document Search Results
+                    </h5>
+                    <div class="d-flex align-items-center">
+                        <form action="{{ url_for('search_documents') }}" method="GET" class="d-flex">
+                            <div class="input-group me-2" style="max-width: 300px;">
+                                <input type="text" name="query" class="form-control" placeholder="Search documents..." 
+                                       value="{{ search_query|default('', true) }}">
+                                <select name="category" class="form-select" style="max-width: 120px;">
+                                    <option value="all" {% if category == 'all' %}selected{% endif %}>All</option>
+                                    <option value="cours" {% if category == 'cours' %}selected{% endif %}>Cours</option>
+                                    <option value="td" {% if category == 'td' %}selected{% endif %}>TD</option>
+                                    <option value="tp" {% if category == 'tp' %}selected{% endif %}>TP</option>
+                                    <option value="autre" {% if category == 'autre' %}selected{% endif %}>Autre</option>
+                                </select>
+                                <button class="btn btn-primary" type="submit">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                            <a href="{{ url_for('documents') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Clear
+                            </a>
                         </form>
                     </div>
                 </div>
                 <div class="card-body">
                     {% if search_query %}
-                    <div class="alert alert-info alert-dismissible fade show" role="alert">
-                        <div>
-                            <strong>Résultats de recherche pour: "{{ search_query }}"</strong>
-                            {% if category and category != 'all' %}
-                                dans la catégorie: <strong>{{ category|title }}</strong>
-                            {% endif %}
-                        </div>
-                        <a href="/documents" class="btn btn-sm btn-outline-info ms-2">Effacer la recherche</a>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Showing results for: <strong>"{{ search_query }}"</strong>
+                        {% if category != 'all' %}
+                            in category: <strong>{{ category|title }}</strong>
+                        {% endif %}
                     </div>
                     {% endif %}
                     
-                    <div class="mb-3">
-                        <div class="btn-group" role="group">
-                            <button type="button" class="btn btn-outline-secondary active" data-filter="all">Tous</button>
-                            <button type="button" class="btn btn-outline-secondary" data-filter="cours">Cours</button>
-                            <button type="button" class="btn btn-outline-secondary" data-filter="td">TD</button>
-                            <button type="button" class="btn btn-outline-secondary" data-filter="tp">TP</button>
-                            <button type="button" class="btn btn-outline-secondary" data-filter="autre">Autre</button>
-                        </div>
-                    </div>
                     <div class="table-responsive">
                         <table class="table table-striped table-hover">
                             <thead>
                                 <tr>
                                     <th style="width: 50px;">Format</th>
-                                    <th>Titre</th>
-                                    <th>Nom du fichier</th>
-                                    <th>Catégorie</th>
+                                    <th>Title</th>
+                                    <th>Category</th>
                                     <th>Description</th>
-                                    <th>Date d'ajout</th>
-                                    <th>Taille</th>
+                                    <th>Upload Date</th>
+                                    <th>Size</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
-                            <tbody id="documentsList">
+                            <tbody id="searchResultsList">
                                 {% for doc in documents %}
                                 <tr id="document-{{ doc.id }}" data-category="{{ doc.category }}">
                                     <td class="text-center">
@@ -127,7 +82,6 @@
                                         <div class="small text-muted">{{ ext|upper }}</div>
                                     </td>
                                     <td>{{ doc.title }}</td>
-                                    <td><small class="text-muted">{{ doc.filename }}</small></td>
                                     <td>{{ doc.category|title }}</td>
                                     <td>{{ doc.description or '-' }}</td>
                                     <td>{{ doc.upload_date.strftime('%Y-%m-%d') }}</td>
@@ -135,10 +89,10 @@
                                     <td>
                                         <div class="btn-group">
                                             <a href="/download-document/{{ doc.id }}" class="btn btn-sm btn-success">
-                                                <i class="bi bi-download"></i> Télécharger
+                                                <i class="bi bi-download"></i> Download
                                             </a>
                                             <button class="btn btn-sm btn-danger delete-doc-btn" data-document-id="{{ doc.id }}">
-                                                <i class="bi bi-trash"></i> Supprimer
+                                                <i class="bi bi-trash"></i> Delete
                                             </button>
                                         </div>
                                     </td>
@@ -147,14 +101,28 @@
                             </tbody>
                         </table>
                     </div>
-                    {% if not documents %}
-                    <div class="text-center py-4">
+                    
+                    {% if documents|length == 0 %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No documents found</h5>
                         <p class="text-muted">
                             {% if search_query %}
-                                Aucun document ne correspond à vos critères de recherche.
+                                No documents match your search criteria.
                             {% else %}
-                                Aucun document n'a été téléversé
+                                You haven't uploaded any documents yet.
                             {% endif %}
+                        </p>
+                        <a href="{{ url_for('documents') }}" class="btn btn-primary mt-2">
+                            <i class="fas fa-arrow-left me-2"></i> Back to Documents
+                        </a>
+                    </div>
+                    {% endif %}
+                    
+                    {% if documents|length > 0 %}
+                    <div class="mt-3">
+                        <p class="text-muted">
+                            Found {{ documents|length }} document{% if documents|length != 1 %}s{% endif %}
                         </p>
                     </div>
                     {% endif %}
@@ -164,67 +132,13 @@
     </div>
 </div>
 
-<!-- View Document Modal -->
-<div class="modal fade" id="viewDocumentModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="documentViewTitle"></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" id="documentViewContent">
-                <!-- Document content will be loaded here -->
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-                <a href="#" class="btn btn-primary" id="downloadDocumentBtn">Télécharger</a>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Upload document form submission
-        document.getElementById('uploadDocumentForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const formData = new FormData(this);
-            
-            const uploadBtn = this.querySelector('button[type="submit"]');
-            const originalBtnText = uploadBtn.innerHTML;
-            uploadBtn.disabled = true;
-            uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Téléversement...';
-            
-            fetch('/upload-document', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                uploadBtn.disabled = false;
-                uploadBtn.innerHTML = originalBtnText;
-                
-                if (data.status === 'success') {
-                    alert('Document téléversé avec succès!');
-                    // Reload the page to show the new document
-                    window.location.reload();
-                } else {
-                    alert('Erreur: ' + data.message);
-                }
-            })
-            .catch(error => {
-                uploadBtn.disabled = false;
-                uploadBtn.innerHTML = originalBtnText;
-                console.error('Error:', error);
-                alert('Une erreur est survenue. Veuillez réessayer.');
-            });
-        });
-
         // Delete document functionality
         document.querySelectorAll('.delete-doc-btn').forEach(button => {
             button.addEventListener('click', function() {
                 const documentId = this.dataset.documentId;
-                if (confirm('Êtes-vous sûr de vouloir supprimer ce document? Cette action ne peut pas être annulée.')) {
+                if (confirm('Are you sure you want to delete this document? This action cannot be undone.')) {
                     fetch(`/delete-document/${documentId}`, {
                         method: 'POST'
                     })
@@ -232,151 +146,40 @@
                     .then(data => {
                         if (data.status === 'success') {
                             document.getElementById(`document-${documentId}`).remove();
-                            alert('Document supprimé avec succès!');
+                            
+                            // Update the document count
+                            const remainingDocs = document.querySelectorAll('#searchResultsList tr').length;
+                            if (remainingDocs === 0) {
+                                // No documents left, refresh to show "no documents" message
+                                window.location.reload();
+                            }
+                            
+                            alert('Document deleted successfully!');
                         } else {
-                            alert('Erreur: ' + data.message);
+                            alert('Error: ' + data.message);
                         }
                     })
                     .catch(error => {
                         console.error('Error:', error);
-                        alert('Une erreur est survenue. Veuillez réessayer.');
+                        alert('An error occurred. Please try again.');
                     });
                 }
             });
         });
 
-        // Client-side search functionality (for filtering displayed results)
-        document.getElementById('searchDocumentInput').addEventListener('keyup', function(e) {
-            // If the form will handle search, only activate this on Enter key
-            if (e.key === 'Enter') {
-                return; // Let the form handle it
-            }
-            
-            // Otherwise provide instant filtering
-            const query = this.value.trim().toLowerCase();
-            const rows = document.querySelectorAll('#documentsList tr');
-            let hasVisibleRows = false;
-            
-            rows.forEach(row => {
-                const text = row.textContent.toLowerCase();
-                // Check if file contains query text
-                if (text.includes(query)) {
-                    row.style.display = '';
-                    hasVisibleRows = true;
-                    
-                    // Highlight the matched text if query is not empty
-                    if (query) {
-                        const filename = row.querySelector('td:nth-child(3)');
-                        const title = row.querySelector('td:nth-child(2)');
-                        
-                        // Reset previous highlights
-                        filename.innerHTML = `<small class="text-muted">${filename.textContent}</small>`;
-                        title.textContent = title.textContent;
-                        
-                        // Apply new highlights
-                        if (filename.textContent.toLowerCase().includes(query)) {
-                            const text = filename.textContent;
-                            const regExp = new RegExp(query, 'gi');
-                            filename.innerHTML = `<small class="text-muted">${text.replace(regExp, match => `<mark>${match}</mark>`)}</small>`;
-                        }
-                        
-                        if (title.textContent.toLowerCase().includes(query)) {
-                            const text = title.textContent;
-                            const regExp = new RegExp(query, 'gi');
-                            title.innerHTML = text.replace(regExp, match => `<mark>${match}</mark>`);
-                        }
-                    }
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-            
-            // Show "no results" message if needed
-            const noResultsMsg = document.querySelector('#documentsList + .text-center');
-            if (noResultsMsg) {
-                if (!hasVisibleRows && query) {
-                    noResultsMsg.style.display = 'block';
-                    noResultsMsg.querySelector('p').textContent = 'Aucun document ne correspond à vos critères de recherche.';
-                } else if (!hasVisibleRows) {
-                    noResultsMsg.style.display = 'block';
-                    noResultsMsg.querySelector('p').textContent = 'Aucun document n\'a été téléversé.';
-                } else {
-                    noResultsMsg.style.display = 'none';
-                }
-            }
-        });
-
-        // Category filter functionality
-        document.querySelectorAll('.btn-group[role="group"] button').forEach(button => {
-            button.addEventListener('click', function() {
-                // Update active button
-                document.querySelectorAll('.btn-group[role="group"] button').forEach(btn => {
-                    btn.classList.remove('active');
-                });
-                this.classList.add('active');
-                
-                const filter = this.dataset.filter;
-                const rows = document.querySelectorAll('#documentsList tr');
-                let hasVisibleRows = false;
-                
-                rows.forEach(row => {
-                    if (filter === 'all' || row.dataset.category === filter) {
-                        row.style.display = '';
-                        hasVisibleRows = true;
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
-                
-                // Show "no results" message if needed
-                const noResultsMsg = document.querySelector('#documentsList + .text-center');
-                if (noResultsMsg) {
-                    if (!hasVisibleRows && filter !== 'all') {
-                        noResultsMsg.style.display = 'block';
-                        noResultsMsg.querySelector('p').textContent = `Aucun document trouvé dans la catégorie: ${filter}.`;
-                    } else if (!hasVisibleRows) {
-                        noResultsMsg.style.display = 'block';
-                        noResultsMsg.querySelector('p').textContent = 'Aucun document n\'a été téléversé.';
-                    } else {
-                        noResultsMsg.style.display = 'none';
-                    }
-                }
-            });
-        });
-        
-        // Highlight search terms if we're on search results
-        {% if search_query %}
+        // Highlight search terms
         const searchQuery = "{{ search_query|default('', true) }}".toLowerCase();
         if (searchQuery) {
-            const rows = document.querySelectorAll('#documentsList tr');
-            rows.forEach(row => {
-                const filename = row.querySelector('td:nth-child(3)');
-                const title = row.querySelector('td:nth-child(2)');
-                const description = row.querySelector('td:nth-child(5)');
-                
-                // Apply highlights to filename
-                if (filename && filename.textContent.toLowerCase().includes(searchQuery)) {
-                    const text = filename.textContent;
-                    const regExp = new RegExp(searchQuery, 'gi');
-                    filename.innerHTML = `<small class="text-muted">${text.replace(regExp, match => `<mark>${match}</mark>`)}</small>`;
-                }
-                
-                // Apply highlights to title
-                if (title && title.textContent.toLowerCase().includes(searchQuery)) {
-                    const text = title.textContent;
-                    const regExp = new RegExp(searchQuery, 'gi');
-                    title.innerHTML = text.replace(regExp, match => `<mark>${match}</mark>`);
-                }
-                
-                // Apply highlights to description
-                if (description && description.textContent.toLowerCase().includes(searchQuery)) {
-                    const text = description.textContent;
-                    const regExp = new RegExp(searchQuery, 'gi');
-                    description.innerHTML = text.replace(regExp, match => `<mark>${match}</mark>`);
+            const contentCells = document.querySelectorAll('#searchResultsList td:nth-child(2), #searchResultsList td:nth-child(4)');
+            
+            contentCells.forEach(cell => {
+                const text = cell.textContent;
+                if (text.toLowerCase().includes(searchQuery)) {
+                    const regex = new RegExp(`(${searchQuery})`, 'gi');
+                    cell.innerHTML = text.replace(regex, '<mark>$1</mark>');
                 }
             });
         }
-        {% endif %}
     });
 </script>
 {% endblock %}
