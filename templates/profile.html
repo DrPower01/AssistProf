@@ -84,47 +84,6 @@
                     </div>
                 </div>
             </div>
-            
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Préférences de notification</h5>
-                </div>
-                <div class="card-body">
-                    <form id="notificationPreferencesForm">
-                        <div class="form-check form-switch mb-3">
-                            <input class="form-check-input" type="checkbox" id="emailNotifications" 
-                                   {% if preferences.email_notifications %}checked{% endif %}>
-                            <label class="form-check-label" for="emailNotifications">Notifications par email</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-3">
-                            <input class="form-check-input" type="checkbox" id="scheduleReminders" 
-                                   {% if preferences.schedule_reminders %}checked{% endif %}>
-                            <label class="form-check-label" for="scheduleReminders">Rappels d'emploi du temps</label>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-3">
-                            <input class="form-check-input" type="checkbox" id="studentGradeNotifications" 
-                                   {% if preferences.student_grade_notifications %}checked{% endif %}>
-                            <label class="form-check-label" for="studentGradeNotifications">Notifications de notes d'étudiants</label>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="reminderTime" class="form-label">Délai de rappel avant les cours</label>
-                            <select class="form-select" id="reminderTime">
-                                <option value="15" {% if preferences.reminder_time == 15 %}selected{% endif %}>15 minutes</option>
-                                <option value="30" {% if preferences.reminder_time == 30 %}selected{% endif %}>30 minutes</option>
-                                <option value="60" {% if preferences.reminder_time == 60 %}selected{% endif %}>1 heure</option>
-                                <option value="120" {% if preferences.reminder_time == 120 %}selected{% endif %}>2 heures</option>
-                            </select>
-                        </div>
-                        
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary">Enregistrer les préférences</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
         </div>
     </div>
 </div>
@@ -199,7 +158,7 @@
     </div>
 </div>
 
-<!-- Change Password Modal -->
+<!-- Change Password Modal with OTP Verification -->
 <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -208,18 +167,48 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="changePasswordForm">
-                    <div class="mb-3">
-                        <label for="currentPassword" class="form-label">Mot de passe actuel</label>
-                        <input type="password" class="form-control" id="currentPassword" required>
+                <!-- Step 1: Form for password changes -->
+                <div id="passwordFormStep" class="step-content">
+                    <form id="changePasswordForm">
+                        <div class="mb-3">
+                            <label for="currentPassword" class="form-label">Mot de passe actuel</label>
+                            <input type="password" class="form-control" id="currentPassword" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="newPassword" class="form-label">Nouveau mot de passe</label>
+                            <input type="password" class="form-control" id="newPassword" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirmPassword" class="form-label">Confirmer le nouveau mot de passe</label>
+                            <input type="password" class="form-control" id="confirmPassword" required>
+                        </div>
+                        <div class="alert alert-info">
+                            Pour des raisons de sécurité, un code de vérification sera envoyé à votre adresse email avant de pouvoir changer votre mot de passe.
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Step 2: OTP verification for password change -->
+                <div id="passwordOtpVerificationStep" class="step-content d-none">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-key fa-3x text-primary mb-3"></i>
+                        <h5>Vérification OTP</h5>
+                        <p>Un code de vérification à usage unique a été envoyé à votre adresse email pour confirmer le changement de mot de passe.</p>
                     </div>
-                    <div class="mb-3">
-                        <label for="newPassword" class="form-label">Nouveau mot de passe</label>
-                        <input type="password" class="form-control" id="newPassword" required>
+                    <div class="mb-4">
+                        <label for="passwordOtpCode" class="form-label">Code de vérification</label>
+                        <div class="otp-input-container d-flex justify-content-center">
+                            <input type="text" maxlength="6" class="form-control otp-input text-center" id="passwordOtpCode" placeholder="Entrez le code à 6 chiffres">
+                        </div>
+                        <div class="text-center mt-2">
+                            <small class="text-muted">Le code expire après 10 minutes</small>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="confirmPassword" class="form-label">Confirmer le nouveau mot de passe</label>
-                        <input type="password" class="form-control" id="confirmPassword" required>
+                    <div id="passwordOtpTimer" class="text-center mb-3">
+                        <span class="text-muted">Vous pouvez demander un nouveau code dans <span id="passwordTimerCountdown">03:00</span></span>
+                    </div>
+                    <div class="text-center">
+                        <button type="button" class="btn btn-link btn-sm d-none" id="resendPasswordOtpBtn">Renvoyer le code</button>
                     </div>
                     <div class="alert alert-success d-none" id="passwordUpdateSuccess">
                         Mot de passe mis à jour avec succès!
@@ -227,11 +216,13 @@
                     <div class="alert alert-danger d-none" id="passwordUpdateError">
                         Une erreur s'est produite. Veuillez réessayer.
                     </div>
-                </form>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                <button type="button" class="btn btn-primary" id="savePasswordBtn">Enregistrer</button>
+                <button type="button" class="btn btn-primary" id="requestPasswordOtpBtn">Demander un code OTP</button>
+                <button type="button" class="btn btn-success d-none" id="verifyPasswordOtpBtn">Vérifier et enregistrer</button>
+                <button type="button" class="btn btn-link d-none" id="backToPasswordFormBtn">Retour</button>
             </div>
         </div>
     </div>
@@ -367,11 +358,11 @@
         transition: all 0.3s ease;
     }
     
-    #otpTimer {
+    #otpTimer, #passwordOtpTimer {
         font-size: 0.9rem;
     }
     
-    #timerCountdown {
+    #timerCountdown, #passwordTimerCountdown {
         font-weight: bold;
     }
     
@@ -455,119 +446,103 @@
         styleElement.textContent = fixModalStyles;
         document.head.appendChild(styleElement);
         
-        // ...existing code for form submissions...
+        // Profile update with OTP verification
+        const profileFormStep = document.getElementById('profileFormStep');
+        const otpVerificationStep = document.getElementById('otpVerificationStep');
+        const requestOtpBtn = document.getElementById('requestOtpBtn');
+        const verifyOtpBtn = document.getElementById('verifyOtpBtn');
+        const backToFormBtn = document.getElementById('backToFormBtn');
+        const resendOtpBtn = document.getElementById('resendOtpBtn');
+        const otpCode = document.getElementById('otpCode');
+        const timerCountdown = document.getElementById('timerCountdown');
         
-        // ...existing code for OTP verification...
-        
-        // Debug modal functionality
-        console.log('Modal elements found:', {
-            editProfileModal: !!editProfileModal,
-            passwordModal: !!passwordModal,
-            profileModalBtn: !!profileModalBtn,
-            passwordModalBtn: !!passwordModalBtn
-        });
-        
-        // Add a global helper to open modals programmatically
-        window.openProfileModal = function() {
-            if (window.editProfileModalInstance) {
-                window.editProfileModalInstance.show();
-            } else if (typeof $ !== 'undefined') {
-                $('#editProfileModal').modal('show');
-            }
-        };
-        
-        window.openPasswordModal = function() {
-            if (window.passwordModalInstance) {
-                window.passwordModalInstance.show();
-            } else if (typeof $ !== 'undefined') {
-                $('#changePasswordModal').modal('show');
-            }
-        };
-    });
-</script>
-
-<!-- Add a fallback button in case the modal triggers aren't working -->
-<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1000;">
-    <button onclick="window.openProfileModal()" class="btn btn-sm btn-secondary mb-2">Debug: Open Profile Modal</button>
-    <button onclick="window.openPasswordModal()" class="btn btn-sm btn-secondary">Debug: Open Password Modal</button>
-</div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Form submissions
-        const editProfileForm = document.getElementById('editProfileForm');
-        const changePasswordForm = document.getElementById('changePasswordForm');
-        const notificationPreferencesForm = document.getElementById('notificationPreferencesForm');
-        
-        // Buttons
-        const saveProfileBtn = document.getElementById('saveProfileBtn');
-        const savePasswordBtn = document.getElementById('savePasswordBtn');
-        
-        // Alerts
-        const profileUpdateSuccess = document.getElementById('profileUpdateSuccess');
-        const profileUpdateError = document.getElementById('profileUpdateError');
+        // Password change with OTP verification
+        const passwordFormStep = document.getElementById('passwordFormStep');
+        const passwordOtpVerificationStep = document.getElementById('passwordOtpVerificationStep');
+        const requestPasswordOtpBtn = document.getElementById('requestPasswordOtpBtn');
+        const verifyPasswordOtpBtn = document.getElementById('verifyPasswordOtpBtn');
+        const backToPasswordFormBtn = document.getElementById('backToPasswordFormBtn');
+        const resendPasswordOtpBtn = document.getElementById('resendPasswordOtpBtn');
+        const passwordOtpCode = document.getElementById('passwordOtpCode');
+        const passwordTimerCountdown = document.getElementById('passwordTimerCountdown');
         const passwordUpdateSuccess = document.getElementById('passwordUpdateSuccess');
         const passwordUpdateError = document.getElementById('passwordUpdateError');
         
-        // Update profile
-        if (saveProfileBtn) {
-            saveProfileBtn.addEventListener('click', function() {
-                // Hide any previous alerts
-                profileUpdateSuccess.classList.add('d-none');
-                profileUpdateError.classList.add('d-none');
-                
-                // Get form data
-                const firstName = document.getElementById('firstName').value;
-                const lastName = document.getElementById('lastName').value;
-                const email = document.getElementById('email').value;
-                
-                // Validate form data
-                if (!firstName || !lastName || !email) {
-                    profileUpdateError.textContent = 'Tous les champs sont obligatoires';
-                    profileUpdateError.classList.remove('d-none');
-                    return;
-                }
-                
-                // Make AJAX request to update profile
-                fetch('/update-profile', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: new URLSearchParams({
-                        'firstName': firstName,
-                        'lastName': lastName,
-                        'email': email
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        profileUpdateSuccess.classList.remove('d-none');
-                        // Reload page after 1 second to show updated info
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1000);
-                    } else {
-                        profileUpdateError.textContent = data.message || 'Une erreur s\'est produite';
-                        profileUpdateError.classList.remove('d-none');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    profileUpdateError.textContent = 'Une erreur de connexion s\'est produite';
-                    profileUpdateError.classList.remove('d-none');
-                });
-            });
+        let otpRequestData = null;
+        let passwordOtpRequestData = null;
+        let countdownInterval = null;
+        let passwordCountdownInterval = null;
+        
+        // Function to show OTP verification step for password change
+        function showPasswordOtpVerification() {
+            passwordFormStep.classList.add('d-none');
+            passwordOtpVerificationStep.classList.remove('d-none');
+            requestPasswordOtpBtn.classList.add('d-none');
+            verifyPasswordOtpBtn.classList.remove('d-none');
+            backToPasswordFormBtn.classList.remove('d-none');
+            startPasswordCountdownTimer(180); // 3 minutes countdown
         }
         
-        // Update password
-        if (savePasswordBtn) {
-            savePasswordBtn.addEventListener('click', function() {
-                // Hide any previous alerts
-                passwordUpdateSuccess.classList.add('d-none');
-                passwordUpdateError.classList.add('d-none');
+        // Function to show password form step
+        function showPasswordForm() {
+            passwordOtpVerificationStep.classList.add('d-none');
+            passwordFormStep.classList.remove('d-none');
+            verifyPasswordOtpBtn.classList.add('d-none');
+            backToPasswordFormBtn.classList.add('d-none');
+            requestPasswordOtpBtn.classList.remove('d-none');
+            
+            // Clear any previous OTP
+            passwordOtpCode.value = '';
+            passwordUpdateSuccess.classList.add('d-none');
+            passwordUpdateError.classList.add('d-none');
+            
+            // Clear timer
+            if (passwordCountdownInterval) {
+                clearInterval(passwordCountdownInterval);
+                passwordCountdownInterval = null;
+            }
+        }
+        
+        // Function to start countdown timer for password change
+        function startPasswordCountdownTimer(seconds) {
+            let remainingTime = seconds;
+            
+            // Display initial time
+            updatePasswordTimerDisplay(remainingTime);
+            
+            // Hide resend button
+            resendPasswordOtpBtn.classList.add('d-none');
+            
+            // Clear any existing interval
+            if (passwordCountdownInterval) {
+                clearInterval(passwordCountdownInterval);
+            }
+            
+            // Start the interval
+            passwordCountdownInterval = setInterval(function() {
+                remainingTime--;
                 
+                if (remainingTime <= 0) {
+                    clearInterval(passwordCountdownInterval);
+                    resendPasswordOtpBtn.classList.remove('d-none');
+                    passwordTimerCountdown.parentElement.classList.add('d-none');
+                } else {
+                    updatePasswordTimerDisplay(remainingTime);
+                }
+            }, 1000);
+        }
+        
+        // Function to update the timer display for password change
+        function updatePasswordTimerDisplay(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            passwordTimerCountdown.textContent = `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            passwordTimerCountdown.parentElement.classList.remove('d-none');
+        }
+        
+        // Request OTP button handler for password change
+        if (requestPasswordOtpBtn) {
+            requestPasswordOtpBtn.addEventListener('click', function() {
                 // Get form data
                 const currentPassword = document.getElementById('currentPassword').value;
                 const newPassword = document.getElementById('newPassword').value;
@@ -587,25 +562,78 @@
                     return;
                 }
                 
-                // Make AJAX request to update password
+                // Store form data for later use
+                passwordOtpRequestData = {
+                    currentPassword: currentPassword,
+                    newPassword: newPassword
+                };
+                
+                // Request OTP via API
+                fetch('/request-password-otp', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        'currentPassword': currentPassword
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Show OTP verification step
+                        showPasswordOtpVerification();
+                    } else {
+                        passwordUpdateError.textContent = data.message || 'Erreur lors de l\'envoi du code OTP';
+                        passwordUpdateError.classList.remove('d-none');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    passwordUpdateError.textContent = 'Une erreur de connexion s\'est produite';
+                    passwordUpdateError.classList.remove('d-none');
+                });
+            });
+        }
+        
+        // Verify OTP button handler for password change
+        if (verifyPasswordOtpBtn) {
+            verifyPasswordOtpBtn.addEventListener('click', function() {
+                const otp = passwordOtpCode.value.trim();
+                
+                // Validate OTP
+                if (!otp || otp.length !== 6) {
+                    passwordUpdateError.textContent = 'Veuillez entrer un code OTP valide à 6 chiffres';
+                    passwordUpdateError.classList.remove('d-none');
+                    return;
+                }
+                
+                // Hide any previous alerts
+                passwordUpdateSuccess.classList.add('d-none');
+                passwordUpdateError.classList.add('d-none');
+                
+                // Submit OTP and password data
                 fetch('/update-password', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                     },
                     body: new URLSearchParams({
-                        'currentPassword': currentPassword,
-                        'newPassword': newPassword
+                        'currentPassword': passwordOtpRequestData.currentPassword,
+                        'newPassword': passwordOtpRequestData.newPassword,
+                        'otpCode': otp
                     })
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
                         passwordUpdateSuccess.classList.remove('d-none');
-                        // Clear the form
-                        document.getElementById('currentPassword').value = '';
-                        document.getElementById('newPassword').value = '';
-                        document.getElementById('confirmPassword').value = '';
+                        // Close modal after a delay
+                        setTimeout(() => {
+                            if (window.passwordModalInstance) {
+                                window.passwordModalInstance.hide();
+                            }
+                        }, 1500);
                     } else {
                         passwordUpdateError.textContent = data.message || 'Une erreur s\'est produite';
                         passwordUpdateError.classList.remove('d-none');
@@ -619,241 +647,22 @@
             });
         }
         
-        // Update notification preferences
-        if (notificationPreferencesForm) {
-            notificationPreferencesForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                // Get form data
-                const emailNotifications = document.getElementById('emailNotifications').checked;
-                const scheduleReminders = document.getElementById('scheduleReminders').checked;
-                const studentGradeNotifications = document.getElementById('studentGradeNotifications').checked;
-                const reminderTime = document.getElementById('reminderTime').value;
-                
-                // Make AJAX request to update notification preferences
-                fetch('/update-notification-preferences', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: new URLSearchParams({
-                        'emailNotifications': emailNotifications,
-                        'scheduleReminders': scheduleReminders,
-                        'studentGradeNotifications': studentGradeNotifications,
-                        'reminderTime': reminderTime
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        alert('Préférences enregistrées avec succès');
-                    } else {
-                        alert('Erreur: ' + (data.message || 'Une erreur s\'est produite'));
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Une erreur de connexion s\'est produite');
-                });
-            });
+        // Back button handler for password change
+        if (backToPasswordFormBtn) {
+            backToPasswordFormBtn.addEventListener('click', showPasswordForm);
         }
         
-        // Profile update with OTP verification
-        const profileFormStep = document.getElementById('profileFormStep');
-        const otpVerificationStep = document.getElementById('otpVerificationStep');
-        const requestOtpBtn = document.getElementById('requestOtpBtn');
-        const verifyOtpBtn = document.getElementById('verifyOtpBtn');
-        const backToFormBtn = document.getElementById('backToFormBtn');
-        const resendOtpBtn = document.getElementById('resendOtpBtn');
-        const otpCode = document.getElementById('otpCode');
-        const timerCountdown = document.getElementById('timerCountdown');
-        
-        let otpRequestData = null;
-        let countdownInterval = null;
-        
-        // Function to show OTP verification step
-        function showOtpVerification() {
-            profileFormStep.classList.add('d-none');
-            otpVerificationStep.classList.remove('d-none');
-            requestOtpBtn.classList.add('d-none');
-            verifyOtpBtn.classList.remove('d-none');
-            backToFormBtn.classList.remove('d-none');
-            startCountdownTimer(180); // 3 minutes countdown
-        }
-        
-        // Function to show profile form step
-        function showProfileForm() {
-            otpVerificationStep.classList.add('d-none');
-            profileFormStep.classList.remove('d-none');
-            verifyOtpBtn.classList.add('d-none');
-            backToFormBtn.classList.add('d-none');
-            requestOtpBtn.classList.remove('d-none');
-            
-            // Clear any previous OTP
-            otpCode.value = '';
-            profileUpdateSuccess.classList.add('d-none');
-            profileUpdateError.classList.add('d-none');
-            
-            // Clear timer
-            if (countdownInterval) {
-                clearInterval(countdownInterval);
-                countdownInterval = null;
-            }
-        }
-        
-        // Function to start countdown timer
-        function startCountdownTimer(seconds) {
-            let remainingTime = seconds;
-            
-            // Display initial time
-            updateTimerDisplay(remainingTime);
-            
-            // Hide resend button
-            resendOtpBtn.classList.add('d-none');
-            
-            // Clear any existing interval
-            if (countdownInterval) {
-                clearInterval(countdownInterval);
-            }
-            
-            // Start the interval
-            countdownInterval = setInterval(function() {
-                remainingTime--;
-                
-                if (remainingTime <= 0) {
-                    clearInterval(countdownInterval);
-                    resendOtpBtn.classList.remove('d-none');
-                    timerCountdown.parentElement.classList.add('d-none');
-                } else {
-                    updateTimerDisplay(remainingTime);
-                }
-            }, 1000);
-        }
-        
-        // Function to update the timer display
-        function updateTimerDisplay(seconds) {
-            const minutes = Math.floor(seconds / 60);
-            const secs = seconds % 60;
-            timerCountdown.textContent = `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-            timerCountdown.parentElement.classList.remove('d-none');
-        }
-        
-        // Request OTP button handler
-        if (requestOtpBtn) {
-            requestOtpBtn.addEventListener('click', function() {
-                // Get form data
-                const firstName = document.getElementById('firstName').value;
-                const lastName = document.getElementById('lastName').value;
-                const email = document.getElementById('email').value;
-                
-                // Validate form data
-                if (!firstName || !lastName || !email) {
-                    profileUpdateError.textContent = 'Tous les champs sont obligatoires';
-                    profileUpdateError.classList.remove('d-none');
-                    return;
-                }
-                
-                // Store form data for later use
-                otpRequestData = {
-                    firstName: firstName,
-                    lastName: lastName,
-                    email: email
-                };
-                
-                // Request OTP via API
-                fetch('/request-profile-otp', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: new URLSearchParams({
-                        'email': email
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        // Show OTP verification step
-                        showOtpVerification();
-                    } else {
-                        profileUpdateError.textContent = data.message || 'Erreur lors de l\'envoi du code OTP';
-                        profileUpdateError.classList.remove('d-none');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    profileUpdateError.textContent = 'Une erreur de connexion s\'est produite';
-                    profileUpdateError.classList.remove('d-none');
-                });
-            });
-        }
-        
-        // Verify OTP button handler
-        if (verifyOtpBtn) {
-            verifyOtpBtn.addEventListener('click', function() {
-                const otp = otpCode.value.trim();
-                
-                // Validate OTP
-                if (!otp || otp.length !== 6) {
-                    profileUpdateError.textContent = 'Veuillez entrer un code OTP valide à 6 chiffres';
-                    profileUpdateError.classList.remove('d-none');
-                    return;
-                }
-                
-                // Hide any previous alerts
-                profileUpdateSuccess.classList.add('d-none');
-                profileUpdateError.classList.add('d-none');
-                
-                // Submit OTP and profile data
-                fetch('/update-profile', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: new URLSearchParams({
-                        'firstName': otpRequestData.firstName,
-                        'lastName': otpRequestData.lastName,
-                        'email': otpRequestData.email,
-                        'otpCode': otp
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        profileUpdateSuccess.classList.remove('d-none');
-                        // Reload page after 1 second to show updated info
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1500);
-                    } else {
-                        profileUpdateError.textContent = data.message || 'Une erreur s\'est produite';
-                        profileUpdateError.classList.remove('d-none');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    profileUpdateError.textContent = 'Une erreur de connexion s\'est produite';
-                    profileUpdateError.classList.remove('d-none');
-                });
-            });
-        }
-        
-        // Back button handler
-        if (backToFormBtn) {
-            backToFormBtn.addEventListener('click', showProfileForm);
-        }
-        
-        // Resend OTP button handler
-        if (resendOtpBtn) {
-            resendOtpBtn.addEventListener('click', function() {
+        // Resend OTP button handler for password change
+        if (resendPasswordOtpBtn) {
+            resendPasswordOtpBtn.addEventListener('click', function() {
                 // Request a new OTP
-                fetch('/request-profile-otp', {
+                fetch('/request-password-otp', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                     },
                     body: new URLSearchParams({
-                        'email': otpRequestData.email,
+                        'currentPassword': passwordOtpRequestData.currentPassword,
                         'resend': 'true'
                     })
                 })
@@ -861,25 +670,25 @@
                 .then(data => {
                     if (data.status === 'success') {
                         // Restart the countdown
-                        startCountdownTimer(180);
+                        startPasswordCountdownTimer(180);
                         // Show feedback
                         alert('Un nouveau code OTP a été envoyé à votre adresse email.');
                     } else {
-                        profileUpdateError.textContent = data.message || 'Erreur lors de l\'envoi du code OTP';
-                        profileUpdateError.classList.remove('d-none');
+                        passwordUpdateError.textContent = data.message || 'Erreur lors de l\'envoi du code OTP';
+                        passwordUpdateError.classList.remove('d-none');
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    profileUpdateError.textContent = 'Une erreur de connexion s\'est produite';
-                    profileUpdateError.classList.remove('d-none');
+                    passwordUpdateError.textContent = 'Une erreur de connexion s\'est produite';
+                    passwordUpdateError.classList.remove('d-none');
                 });
             });
         }
         
-        // Modal events to reset state
-        $('#editProfileModal').on('hidden.bs.modal', function() {
-            showProfileForm();
+        // Modal events to reset state for password change
+        $('#changePasswordModal').on('hidden.bs.modal', function() {
+            showPasswordForm();
         });
     });
 </script>
