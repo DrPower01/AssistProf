@@ -119,16 +119,6 @@ def signup():
 def verify_otp(user_id):
     return verify_otp_route(user_id)
 
-# Forgot password route
-@app.route('/forgot-password', methods=['GET', 'POST'])
-def forgot_password():
-    return forgot_password_route(mail)
-
-# Reset password route
-@app.route('/reset-password/<int:user_id>', methods=['GET', 'POST'])
-def reset_password(user_id):
-    return reset_password_route(user_id)
-
 # Logout route
 @app.route('/logout')
 def logout():
