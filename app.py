@@ -1,5 +1,6 @@
 import random
 from flask import Flask, render_template, redirect, url_for, request, flash, session, jsonify
+from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, date, timedelta
 from flask_mail import Mail, Message
@@ -1758,6 +1759,318 @@ def get_notifications():
         'notifications': result,
         'unread_count': unread_count
     })
+
+# Admin required decorator
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated:
+            return redirect(url_for('login'))
+        
+        # Check if user has admin role
+        if not hasattr(current_user, 'role') or current_user.role != 'admin':
+            flash('You do not have permission to access this page', 'danger')
+            return redirect(url_for('dashboard'))
+            
+        return f(*args, **kwargs)
+    return decorated_function
+
+# Admin dashboard route
+@app.route('/admin')
+@login_required
+@admin_required
+def admin_dashboard():
+    # System statistics
+    stats = {
+        'users': Enseignant.query.count(),
+        'students': Etudiants.query.count(),
+        'documents': Document.query.count(),
+        'events': EmploiDuTemps.query.count(),
+        'db_health': 95,  # Placeholder - would be calculated in a real app
+        'system_load': 30  # Placeholder - would be calculated in a real app
+    }
+    
+    # Get all users
+    users = Enseignant.query.all()
+    for user in users:
+        # Set active status to True if not defined
+        if not hasattr(user, 'active'):
+            user.active = True
+    
+    # Get departments (distinct values from students)
+    dept_query = db.session.query(
+        Etudiants.Departement, 
+        db.func.count(Etudiants.Matricule_ET).label('count')
+    ).group_by(Etudiants.Departement).filter(Etudiants.Departement != None).all()
+    
+    departments = []
+    for i, (name, count) in enumerate(dept_query):
+        if name:  # Skip None or empty departments
+            departments.append({
+                'id': i + 1,
+                'name': name,
+                'student_count': count
+            })
+    
+    # Mock logs for the system logs tab
+    logs = [
+        {
+            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'level': 'INFO',
+            'message': 'Admin dashboard accessed',
+            'user': f"{current_user.Prenom_EN} {current_user.Nom_EN}",
+            'ip': request.remote_addr
+        },
+        {
+            'timestamp': (datetime.now() - timedelta(minutes=30)).strftime('%Y-%m-%d %H:%M:%S'),
+            'level': 'WARNING',
+            'message': 'Failed login attempt',
+            'user': 'Unknown',
+            'ip': '192.168.1.1'
+        },
+        {
+            'timestamp': (datetime.now() - timedelta(hours=2)).strftime('%Y-%m-%d %H:%M:%S'),
+            'level': 'ERROR',
+            'message': 'Database connection error',
+            'user': 'System',
+            'ip': 'localhost'
+        }
+    ]
+    
+    # System settings (placeholders)
+    settings = {
+        'app_name': 'AssistProf',
+        'email_from': 'assistprof.djib@gmail.com',
+        'maintenance_mode': False,
+        'debug_mode': app.config['DEBUG']
+    }
+    
+    return render_template('admin.html', 
+                          stats=stats, 
+                          users=users, 
+                          departments=departments,
+                          logs=logs,
+                          settings=settings)
+
+# Admin: Add user
+@app.route('/admin/add-user', methods=['POST'])
+@login_required
+@admin_required
+def admin_add_user():
+    try:
+        # Get form data
+        first_name = request.form.get('first_name')
+        last_name = request.form.get('last_name')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        role = request.form.get('role', 'user')
+        
+        # Validate data
+        if not all([first_name, last_name, email, password]):
+            return jsonify({'status': 'error', 'message': 'All fields are required'}), 400
+            
+        # Check if email already exists
+        existing_user = Enseignant.query.filter_by(Email_EN=email).first()
+        if existing_user:
+            return jsonify({'status': 'error', 'message': 'Email already in use'}), 400
+            
+        # Create new user
+        hashed_password = generate_password_hash(password)
+        new_user = Enseignant(
+            Prenom_EN=first_name,
+            Nom_EN=last_name,
+            Email_EN=email,
+            Mot_de_passe_EN=hashed_password,
+            role=role,
+            active=True,
+            created_at=datetime.now()
+        )
+        
+        db.session.add(new_user)
+        db.session.commit()
+        
+        return jsonify({'status': 'success', 'message': 'User added successfully'})
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error adding user: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+# Admin: Toggle user role
+@app.route('/admin/toggle-user-role', methods=['POST'])
+@login_required
+@admin_required
+def admin_toggle_user_role():
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id')
+        new_role = data.get('new_role')
+        
+        # Validate data
+        if not user_id or new_role not in ['admin', 'user']:
+            return jsonify({'status': 'error', 'message': 'Invalid data provided'}), 400
+            
+        # Get user
+        user = Enseignant.query.get(user_id)
+        if not user:
+            return jsonify({'status': 'error', 'message': 'User not found'}), 404
+            
+        # Don't allow changing own role
+        if int(user_id) == current_user.ID_EN:
+            return jsonify({'status': 'error', 'message': 'Cannot change your own role'}), 400
+            
+        # Update role
+        user.role = new_role
+        db.session.commit()
+        
+        return jsonify({'status': 'success', 'message': 'User role updated successfully'})
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error toggling user role: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+# Admin: Toggle user status
+@app.route('/admin/toggle-user-status', methods=['POST'])
+@login_required
+@admin_required
+def admin_toggle_user_status():
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id')
+        active = data.get('active')
+        
+        # Validate data
+        if not user_id or active is None:
+            return jsonify({'status': 'error', 'message': 'Invalid data provided'}), 400
+            
+        # Get user
+        user = Enseignant.query.get(user_id)
+        if not user:
+            return jsonify({'status': 'error', 'message': 'User not found'}), 404
+            
+        # Don't allow deactivating yourself
+        if int(user_id) == current_user.ID_EN:
+            return jsonify({'status': 'error', 'message': 'Cannot change your own status'}), 400
+            
+        # Update status
+        user.active = bool(active)
+        db.session.commit()
+        
+        return jsonify({'status': 'success', 'message': 'User status updated successfully'})
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error toggling user status: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+# Admin: Update system settings
+@app.route('/admin/update-settings', methods=['POST'])
+@login_required
+@admin_required
+def admin_update_settings():
+    try:
+        # Get form data
+        app_name = request.form.get('app_name')
+        email_from = request.form.get('email_from')
+        maintenance_mode = request.form.get('maintenance_mode') == '1'
+        debug_mode = request.form.get('debug_mode') == '1'
+        
+        # In a real app, you'd save these to a database or config file
+        # For now, we'll just update the app config in memory
+        app.config['MAIL_DEFAULT_SENDER'] = email_from
+        app.config['DEBUG'] = debug_mode
+        
+        # Log the changes
+        logger.info(f"System settings updated by {current_user.Prenom_EN} {current_user.Nom_EN}")
+        
+        return jsonify({'status': 'success', 'message': 'Settings updated successfully'})
+    except Exception as e:
+        logger.error(f"Error updating settings: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+# Admin: Get system logs
+@app.route('/admin/get-logs')
+@login_required
+@admin_required
+def admin_get_logs():
+    try:
+        level = request.args.get('level', 'all')
+        
+        # In a real app, you'd fetch actual logs from a database or log files
+        # For now, we'll return mock logs
+        all_logs = [
+            {
+                'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'level': 'INFO',
+                'message': 'Admin dashboard accessed',
+                'user': f"{current_user.Prenom_EN} {current_user.Nom_EN}",
+                'ip': request.remote_addr
+            },
+            {
+                'timestamp': (datetime.now() - timedelta(minutes=30)).strftime('%Y-%m-%d %H:%M:%S'),
+                'level': 'WARNING',
+                'message': 'Failed login attempt',
+                'user': 'Unknown',
+                'ip': '192.168.1.1'
+            },
+            {
+                'timestamp': (datetime.now() - timedelta(hours=2)).strftime('%Y-%m-%d %H:%M:%S'),
+                'level': 'ERROR',
+                'message': 'Database connection error',
+                'user': 'System',
+                'ip': 'localhost'
+            },
+            {
+                'timestamp': (datetime.now() - timedelta(hours=3)).strftime('%Y-%m-%d %H:%M:%S'),
+                'level': 'INFO',
+                'message': 'System backup completed',
+                'user': 'System',
+                'ip': 'localhost'
+            },
+            {
+                'timestamp': (datetime.now() - timedelta(hours=4)).strftime('%Y-%m-%d %H:%M:%S'),
+                'level': 'DEBUG',
+                'message': 'Session cleanup routine ran',
+                'user': 'System',
+                'ip': 'localhost'
+            }
+        ]
+        
+        # Filter logs based on level
+        if level == 'error':
+            logs = [log for log in all_logs if log['level'] == 'ERROR']
+        elif level == 'warning':
+            logs = [log for log in all_logs if log['level'] in ['ERROR', 'WARNING']]
+        elif level == 'info':
+            logs = [log for log in all_logs if log['level'] in ['ERROR', 'WARNING', 'INFO']]
+        else:
+            logs = all_logs
+            
+        return jsonify({'status': 'success', 'logs': logs})
+    except Exception as e:
+        logger.error(f"Error fetching logs: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+# Admin: Add department
+@app.route('/admin/add-department', methods=['POST'])
+@login_required
+@admin_required
+def admin_add_department():
+    try:
+        # Get form data
+        name = request.form.get('name')
+        description = request.form.get('description', '')
+        
+        # Validate data
+        if not name:
+            return jsonify({'status': 'error', 'message': 'Department name is required'}), 400
+        
+        # In a real app, you would save this to a database table
+        # Since we don't have a Department model, we'll just return success
+        # In a production app, you'd create a Department model and save it
+        
+        return jsonify({'status': 'success', 'message': 'Department added successfully'})
+    except Exception as e:
+        logger.error(f"Error adding department: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 if __name__ == "__main__":
     # Create the database engine with the configured URI

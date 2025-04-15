@@ -1,0 +1,613 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard - AssistProf{% endblock %}
+
+{% block styles %}
+<style>
+    .card-stats {
+        transition: all 0.3s;
+    }
+    .card-stats:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .admin-tab-content {
+        min-height: 400px;
+    }
+    .user-table th, .user-table td {
+        vertical-align: middle;
+    }
+    .logs-table tr.error {
+        background-color: rgba(255, 0, 0, 0.1);
+    }
+    .logs-table tr.warning {
+        background-color: rgba(255, 165, 0, 0.1);
+    }
+    .dept-card {
+        border-left: 4px solid #007bff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4"><i class="fas fa-user-shield mr-2"></i>Admin Dashboard</h1>
+            
+            <!-- Stats Overview -->
+            <div class="row mb-4">
+                <div class="col-md-4 col-xl-3 mb-4">
+                    <div class="card border-left-primary shadow h-100 py-2 card-stats">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                        Users</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.users }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-users fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 col-xl-3 mb-4">
+                    <div class="card border-left-success shadow h-100 py-2 card-stats">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                        Students</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.students }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-user-graduate fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 col-xl-3 mb-4">
+                    <div class="card border-left-info shadow h-100 py-2 card-stats">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                        Documents</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.documents }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-file-alt fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 col-xl-3 mb-4">
+                    <div class="card border-left-warning shadow h-100 py-2 card-stats">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                        Schedule Events</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.events }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Admin functions tabs -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <ul class="nav nav-tabs card-header-tabs" id="adminTabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" id="users-tab" data-toggle="tab" href="#users" role="tab" aria-controls="users" aria-selected="true">
+                                <i class="fas fa-users-cog mr-1"></i> User Management
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="departments-tab" data-toggle="tab" href="#departments" role="tab" aria-controls="departments" aria-selected="false">
+                                <i class="fas fa-university mr-1"></i> Departments
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="logs-tab" data-toggle="tab" href="#logs" role="tab" aria-controls="logs" aria-selected="false">
+                                <i class="fas fa-clipboard-list mr-1"></i> System Logs
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="settings-tab" data-toggle="tab" href="#settings" role="tab" aria-controls="settings" aria-selected="false">
+                                <i class="fas fa-cogs mr-1"></i> Settings
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body admin-tab-content">
+                    <div class="tab-content" id="adminTabContent">
+                        <!-- Users Tab Content -->
+                        <div class="tab-pane fade show active" id="users" role="tabpanel" aria-labelledby="users-tab">
+                            <div class="d-flex justify-content-between mb-3">
+                                <h3>User Management</h3>
+                                <button class="btn btn-primary" data-toggle="modal" data-target="#addUserModal">
+                                    <i class="fas fa-user-plus mr-1"></i> Add New User
+                                </button>
+                            </div>
+                            
+                            <div class="table-responsive">
+                                <table class="table table-bordered user-table" id="usersTable" width="100%" cellspacing="0">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Name</th>
+                                            <th>Email</th>
+                                            <th>Role</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for user in users %}
+                                        <tr>
+                                            <td>{{ user.ID_EN }}</td>
+                                            <td>{{ user.Prenom_EN }} {{ user.Nom_EN }}</td>
+                                            <td>{{ user.Email_EN }}</td>
+                                            <td>
+                                                <span class="badge badge-{{ 'danger' if user.role == 'admin' else 'primary' }}">
+                                                    {{ user.role|capitalize }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group">
+                                                    <button class="btn btn-sm btn-{{ 'secondary' if user.role == 'admin' else 'warning' }} toggle-role-btn" 
+                                                            data-user-id="{{ user.ID_EN }}" 
+                                                            data-current-role="{{ user.role }}"
+                                                            {{ 'disabled' if user.ID_EN == current_user.ID_EN }}>
+                                                        Make {{ 'User' if user.role == 'admin' else 'Admin' }}
+                                                    </button>
+                                                    <button class="btn btn-sm btn-{{ 'danger' if user.active else 'success' }} toggle-status-btn" 
+                                                            data-user-id="{{ user.ID_EN }}" 
+                                                            data-active="{{ '1' if user.active else '0' }}"
+                                                            {{ 'disabled' if user.ID_EN == current_user.ID_EN }}>
+                                                        {{ 'Deactivate' if user.active else 'Activate' }}
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- Departments Tab Content -->
+                        <div class="tab-pane fade" id="departments" role="tabpanel" aria-labelledby="departments-tab">
+                            <div class="d-flex justify-content-between mb-3">
+                                <h3>Departments</h3>
+                                <button class="btn btn-primary" data-toggle="modal" data-target="#addDeptModal">
+                                    <i class="fas fa-plus mr-1"></i> Add Department
+                                </button>
+                            </div>
+                            
+                            <div class="row">
+                                {% for dept in departments %}
+                                <div class="col-md-6 col-xl-4 mb-4">
+                                    <div class="card dept-card h-100">
+                                        <div class="card-body">
+                                            <h5 class="card-title">{{ dept.name }}</h5>
+                                            <p class="card-text">
+                                                <i class="fas fa-user-graduate mr-1"></i> {{ dept.student_count }} students
+                                            </p>
+                                        </div>
+                                        <div class="card-footer bg-transparent">
+                                            <button class="btn btn-sm btn-outline-primary">Edit</button>
+                                            <button class="btn btn-sm btn-outline-danger">Delete</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <!-- System Logs Tab Content -->
+                        <div class="tab-pane fade" id="logs" role="tabpanel" aria-labelledby="logs-tab">
+                            <div class="d-flex justify-content-between mb-3">
+                                <h3>System Logs</h3>
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-outline-secondary log-filter active" data-level="all">All</button>
+                                    <button type="button" class="btn btn-outline-info log-filter" data-level="info">Info</button>
+                                    <button type="button" class="btn btn-outline-warning log-filter" data-level="warning">Warnings</button>
+                                    <button type="button" class="btn btn-outline-danger log-filter" data-level="error">Errors</button>
+                                </div>
+                            </div>
+                            
+                            <div class="table-responsive">
+                                <table class="table table-bordered logs-table" id="logsTable" width="100%" cellspacing="0">
+                                    <thead>
+                                        <tr>
+                                            <th>Time</th>
+                                            <th>Level</th>
+                                            <th>Message</th>
+                                            <th>User</th>
+                                            <th>IP</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for log in logs %}
+                                        <tr class="{{ log.level.lower() }}">
+                                            <td>{{ log.timestamp }}</td>
+                                            <td>
+                                                <span class="badge badge-{{ 'danger' if log.level == 'ERROR' else 'warning' if log.level == 'WARNING' else 'info' if log.level == 'INFO' else 'secondary' }}">
+                                                    {{ log.level }}
+                                                </span>
+                                            </td>
+                                            <td>{{ log.message }}</td>
+                                            <td>{{ log.user }}</td>
+                                            <td>{{ log.ip }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- Settings Tab Content -->
+                        <div class="tab-pane fade" id="settings" role="tabpanel" aria-labelledby="settings-tab">
+                            <h3 class="mb-3">System Settings</h3>
+                            
+                            <form id="settingsForm" action="{{ url_for('admin_update_settings') }}" method="post">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="card mb-4">
+                                            <div class="card-header">
+                                                <h5 class="m-0"><i class="fas fa-cog mr-1"></i> General Settings</h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="form-group">
+                                                    <label for="appName">Application Name</label>
+                                                    <input type="text" class="form-control" id="appName" name="app_name" value="{{ settings.app_name }}">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="emailFrom">Default Email Sender</label>
+                                                    <input type="email" class="form-control" id="emailFrom" name="email_from" value="{{ settings.email_from }}">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="card mb-4">
+                                            <div class="card-header">
+                                                <h5 class="m-0"><i class="fas fa-server mr-1"></i> System Settings</h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="form-group">
+                                                    <div class="custom-control custom-switch">
+                                                        <input type="checkbox" class="custom-control-input" id="maintenanceMode" name="maintenance_mode" value="1" {{ 'checked' if settings.maintenance_mode }}>
+                                                        <label class="custom-control-label" for="maintenanceMode">Maintenance Mode</label>
+                                                    </div>
+                                                    <small class="form-text text-muted">When enabled, only administrators can access the site.</small>
+                                                </div>
+                                                
+                                                <div class="form-group mt-4">
+                                                    <div class="custom-control custom-switch">
+                                                        <input type="checkbox" class="custom-control-input" id="debugMode" name="debug_mode" value="1" {{ 'checked' if settings.debug_mode }}>
+                                                        <label class="custom-control-label" for="debugMode">Debug Mode</label>
+                                                    </div>
+                                                    <small class="form-text text-muted">Enable detailed error messages and debugging features.</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group mb-0">
+                                    <div class="d-flex justify-content-between">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save mr-1"></i> Save Settings
+                                        </button>
+                                        <div>
+                                            <button type="button" class="btn btn-warning">
+                                                <i class="fas fa-sync mr-1"></i> Clear Cache
+                                            </button>
+                                            <button type="button" class="btn btn-info">
+                                                <i class="fas fa-database mr-1"></i> Backup Database
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add User Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New User</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="addUserForm" action="{{ url_for('admin_add_user') }}" method="post">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="firstName">First Name</label>
+                        <input type="text" class="form-control" id="firstName" name="first_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="lastName">Last Name</label>
+                        <input type="text" class="form-control" id="lastName" name="last_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="role">Role</label>
+                        <select class="form-control" id="role" name="role">
+                            <option value="user">User</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Department Modal -->
+<div class="modal fade" id="addDeptModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Department</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="addDeptForm" action="{{ url_for('admin_add_department') }}" method="post">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="deptName">Department Name</label>
+                        <input type="text" class="form-control" id="deptName" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="deptDescription">Description</label>
+                        <textarea class="form-control" id="deptDescription" name="description" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Department</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Toggle user role
+        document.querySelectorAll('.toggle-role-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const userId = this.dataset.userId;
+                const currentRole = this.dataset.currentRole;
+                const newRole = currentRole === 'admin' ? 'user' : 'admin';
+                
+                if (confirm(`Are you sure you want to change this user's role to ${newRole}?`)) {
+                    fetch('{{ url_for("admin_toggle_user_role") }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            user_id: userId,
+                            new_role: newRole
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            alert('User role updated successfully');
+                            window.location.reload();
+                        } else {
+                            alert('Error: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred while updating user role');
+                    });
+                }
+            });
+        });
+        
+        // Toggle user status
+        document.querySelectorAll('.toggle-status-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const userId = this.dataset.userId;
+                const isActive = this.dataset.active === '1';
+                const newStatus = !isActive;
+                const statusText = newStatus ? 'activate' : 'deactivate';
+                
+                if (confirm(`Are you sure you want to ${statusText} this user?`)) {
+                    fetch('{{ url_for("admin_toggle_user_status") }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            user_id: userId,
+                            active: newStatus
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            alert('User status updated successfully');
+                            window.location.reload();
+                        } else {
+                            alert('Error: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred while updating user status');
+                    });
+                }
+            });
+        });
+        
+        // Handle form submission for settings
+        document.getElementById('settingsForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            // Convert checkboxes to proper values
+            formData.set('maintenance_mode', document.getElementById('maintenanceMode').checked ? '1' : '0');
+            formData.set('debug_mode', document.getElementById('debugMode').checked ? '1' : '0');
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('Settings updated successfully');
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while updating settings');
+            });
+        });
+        
+        // Handle log filtering
+        document.querySelectorAll('.log-filter').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Update active button
+                document.querySelectorAll('.log-filter').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Get logs based on filter
+                const level = this.dataset.level;
+                
+                fetch(`{{ url_for('admin_get_logs') }}?level=${level}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            const logsTable = document.querySelector('#logsTable tbody');
+                            logsTable.innerHTML = '';
+                            
+                            data.logs.forEach(log => {
+                                const badgeClass = log.level === 'ERROR' ? 'danger' : 
+                                                  log.level === 'WARNING' ? 'warning' : 
+                                                  log.level === 'INFO' ? 'info' : 'secondary';
+                                
+                                const row = `
+                                    <tr class="${log.level.toLowerCase()}">
+                                        <td>${log.timestamp}</td>
+                                        <td>
+                                            <span class="badge badge-${badgeClass}">
+                                                ${log.level}
+                                            </span>
+                                        </td>
+                                        <td>${log.message}</td>
+                                        <td>${log.user}</td>
+                                        <td>${log.ip}</td>
+                                    </tr>
+                                `;
+                                logsTable.insertAdjacentHTML('beforeend', row);
+                            });
+                        } else {
+                            alert('Error: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred while fetching logs');
+                    });
+            });
+        });
+        
+        // User management form
+        document.getElementById('addUserForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('User added successfully');
+                    $('#addUserModal').modal('hide');
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while adding the user');
+            });
+        });
+        
+        // Department form
+        document.getElementById('addDeptForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('Department added successfully');
+                    $('#addDeptModal').modal('hide');
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while adding the department');
+            });
+        });
+    });
+</script>
+{% endblock %}
