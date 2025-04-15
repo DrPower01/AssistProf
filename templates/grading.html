@@ -414,7 +414,7 @@
             
             // Show loading state
             const importBtn = this.querySelector('button[type="submit"]');
-            const originalBtnText = importBtn.textContent;
+            const originalBtnText = importBtn.innerHTML;
             importBtn.disabled = true;
             importBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Importation...';
             
@@ -427,7 +427,7 @@
             .then(data => {
                 // Reset button state
                 importBtn.disabled = false;
-                importBtn.textContent = originalBtnText;
+                importBtn.innerHTML = originalBtnText;
                 
                 // Show results
                 const resultsDiv = document.getElementById('importResults');
@@ -452,7 +452,7 @@
             .catch(error => {
                 // Reset button state
                 importBtn.disabled = false;
-                importBtn.textContent = originalBtnText;
+                importBtn.innerHTML = originalBtnText;
                 console.error('Error:', error);
                 alert('Une erreur est survenue pendant l\'importation. Veuillez réessayer.');
             });

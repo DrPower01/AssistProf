@@ -797,8 +797,31 @@ def import_students():
         stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
         csv_input = csv.reader(stream)
         
-        # Skip header row
+        # Skip header row and identify column indices
         header = next(csv_input)
+        header = [h.strip() for h in header]
+        
+        # Map expected column names to indices
+        column_map = {}
+        expected_headers = ['Matricule', 'Nom_ET_complet', 'year', 'Departement', 'subject', 
+                          'Note_TP', 'Note_CC', 'Note_CF', 'Note_Projet', 'Moyen']
+        
+        for expected in expected_headers:
+            if expected in header:
+                column_map[expected] = header.index(expected)
+            else:
+                # For backward compatibility, try some common variations
+                if expected == 'Matricule' and 'matricule' in header:
+                    column_map[expected] = header.index('matricule')
+                elif expected == 'Nom_ET_complet' and 'nom_complet' in header:
+                    column_map[expected] = header.index('nom_complet')
+                    
+        # Make sure we at least have matricule and name
+        if 'Matricule' not in column_map or 'Nom_ET_complet' not in column_map:
+            return jsonify({
+                'status': 'error', 
+                'message': 'CSV must contain at least Matricule and Nom_ET_complet columns'
+            }), 400
         
         imported_count = 0
         errors = []
@@ -809,21 +832,36 @@ def import_students():
                 continue
                 
             try:
-                # Check if we have enough columns
-                if (len(row) < 5):
-                    errors.append(f"Row skipped: not enough data - {','.join(row)}")
-                    continue
+                # Extract data from CSV using the column map
+                # Default to None if column doesn't exist
+                matricule = row[column_map['Matricule']].strip() if len(row) > column_map['Matricule'] else None
+                nom_complet = row[column_map['Nom_ET_complet']].strip() if len(row) > column_map['Nom_ET_complet'] else None
+                
+                # Optional fields
+                year = row[column_map.get('year', -1)].strip() if 'year' in column_map and len(row) > column_map['year'] else None
+                departement = row[column_map.get('Departement', -1)].strip() if 'Departement' in column_map and len(row) > column_map['Departement'] else None
+                subject = row[column_map.get('subject', -1)].strip() if 'subject' in column_map and len(row) > column_map['subject'] else None
+                
+                # Grade fields - convert to float if present and not empty
+                try:
+                    note_tp = float(row[column_map.get('Note_TP', -1)]) if 'Note_TP' in column_map and len(row) > column_map['Note_TP'] and row[column_map['Note_TP']].strip() else None
+                except ValueError:
+                    note_tp = None
                     
-                # Extract data from CSV
-                matricule = row[0].strip() if row[0].strip() else None
-                nom_complet = row[1].strip() if len(row) > 1 and row[1].strip() else None
-                year = row[2].strip() if len(row) > 2 and row[2].strip() else None
-                departement = row[3].strip() if len(row) > 3 and row[3].strip() else None
-                subject = row[4].strip() if len(row) > 4 and row[4].strip() else None
-                note_tp = float(row[5]) if len(row) > 5 and row[5].strip() else None
-                note_cc = float(row[6]) if len(row) > 6 and row[6].strip() else None
-                note_cf = float(row[7]) if len(row) > 7 and row[7].strip() else None
-                note_projet = float(row[8]) if len(row[8]) else None
+                try:
+                    note_cc = float(row[column_map.get('Note_CC', -1)]) if 'Note_CC' in column_map and len(row) > column_map['Note_CC'] and row[column_map['Note_CC']].strip() else None
+                except ValueError:
+                    note_cc = None
+                    
+                try:
+                    note_cf = float(row[column_map.get('Note_CF', -1)]) if 'Note_CF' in column_map and len(row) > column_map['Note_CF'] and row[column_map['Note_CF']].strip() else None
+                except ValueError:
+                    note_cf = None
+                    
+                try:
+                    note_projet = float(row[column_map.get('Note_Projet', -1)]) if 'Note_Projet' in column_map and len(row) > column_map['Note_Projet'] and row[column_map['Note_Projet']].strip() else None
+                except ValueError:
+                    note_projet = None
                 
                 # Validate required data
                 if (not matricule or not nom_complet):
@@ -835,16 +873,21 @@ def import_students():
                 if (existing_student):
                     # Update existing student
                     existing_student.Nom_ET_complet = nom_complet
-                    existing_student.year = year
-                    existing_student.Departement = departement
-                    existing_student.subject = subject
-                    if (note_tp is not None):
+                    
+                    # Only update if the value is not None
+                    if year is not None:
+                        existing_student.year = year
+                    if departement is not None:
+                        existing_student.Departement = departement
+                    if subject is not None:
+                        existing_student.subject = subject
+                    if note_tp is not None:
                         existing_student.Note_TP = note_tp
-                    if (note_cc is not None):
+                    if note_cc is not None:
                         existing_student.Note_CC = note_cc
-                    if (note_cf is not None):
+                    if note_cf is not None:
                         existing_student.Note_CF = note_cf
-                    if (note_projet is not None):
+                    if note_projet is not None:
                         existing_student.Note_Projet = note_projet
                         
                     # Recalculate average
@@ -858,7 +901,7 @@ def import_students():
                     moyen = None
                     if (all(x is not None for x in [note_tp, note_cc, note_cf])):
                         moyen = (note_tp * 0.3) + (note_cc * 0.2) + (note_cf * 0.5)
-                        if (note_projet):
+                        if (note_projet is not None):
                             moyen = (note_tp * 0.2) + (note_cc * 0.2) + (note_cf * 0.4) + (note_projet * 0.2)
                     
                     # Create new student record
@@ -880,7 +923,7 @@ def import_students():
                 imported_count += 1
                 
             except Exception as e:
-                errors.append(f"Error processing row: {str(e)} - {','.join(row)}")
+                errors.append(f"Error processing row: {str(e)} - {','.join(row if row else ['Empty row'])}")
         
         # Commit all changes
         db.session.commit()
