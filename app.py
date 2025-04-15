@@ -29,7 +29,7 @@ else:
     logger.info(f"Email credentials loaded for: {email_username}")
 
 # Import auth related functions
-from auth import init_login_manager, login_route, logout_route, signup_route, verify_otp_route
+from auth import init_login_manager, login_route, logout_route, signup_route, verify_otp_route, forgot_password_route, reset_password_route
 
 # Create Flask app
 app = Flask(__name__)
@@ -118,6 +118,16 @@ def signup():
 @app.route('/verify-otp/<int:user_id>', methods=['GET', 'POST'])
 def verify_otp(user_id):
     return verify_otp_route(user_id)
+
+# Forgot password route
+@app.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    return forgot_password_route(mail)
+
+# Reset password route
+@app.route('/reset-password/<int:user_id>', methods=['GET', 'POST'])
+def reset_password(user_id):
+    return reset_password_route(user_id)
 
 # Logout route
 @app.route('/logout')
@@ -1606,33 +1616,37 @@ def update_password():
         # Get form data
         current_password = request.form.get('currentPassword')
         new_password = request.form.get('newPassword')
+        confirm_password = request.form.get('confirmPassword', new_password)  # Use new_password as fallback
         otp_code = request.form.get('otpCode')
         
         # Validate data
         if not all([current_password, new_password]):
             return jsonify({'status': 'error', 'message': 'All fields are required'}), 400
-        
-        # Verify OTP if provided
-        if otp_code:
-            # Check if OTP exists in session
-            if 'password_update_otp' not in session:
-                return jsonify({'status': 'error', 'message': 'OTP not requested or expired'}), 400
-                
-            # Get OTP data from session
-            otp_data = session.get('password_update_otp')
             
-            # Check if OTP is expired
-            if datetime.now().timestamp() > otp_data.get('expires_at', 0):
-                # Clean up session
-                session.pop('password_update_otp', None)
-                return jsonify({'status': 'error', 'message': 'OTP expired. Please request a new one'}), 400
-                
-            # Check if OTP is correct
-            if otp_code != otp_data.get('code'):
-                return jsonify({'status': 'error', 'message': 'Invalid OTP'}), 400
-        else:
-            # OTP is required
-            return jsonify({'status': 'error', 'message': 'OTP verification required'}), 400
+        # Check if passwords match
+        if new_password != confirm_password:
+            return jsonify({'status': 'error', 'message': 'New passwords do not match'}), 400
+        
+        # OTP is always required
+        if not otp_code:
+            return jsonify({'status': 'error', 'message': 'OTP verification is required for password changes'}), 400
+            
+        # Check if OTP exists in session
+        if 'password_update_otp' not in session:
+            return jsonify({'status': 'error', 'message': 'OTP not requested or expired. Please request a new code'}), 400
+            
+        # Get OTP data from session
+        otp_data = session.get('password_update_otp')
+        
+        # Check if OTP is expired
+        if datetime.now().timestamp() > otp_data.get('expires_at', 0):
+            # Clean up session
+            session.pop('password_update_otp', None)
+            return jsonify({'status': 'error', 'message': 'OTP expired. Please request a new one'}), 400
+            
+        # Check if OTP is correct
+        if otp_code != otp_data.get('code'):
+            return jsonify({'status': 'error', 'message': 'Invalid OTP code. Please try again'}), 400
             
         # Get a fresh instance from the database 
         user = db.session.get(Enseignant, current_user.ID_EN)
@@ -1686,6 +1700,18 @@ def update_password():
         session.pop('password_update_otp', None)
         
         logger.info(f"Password updated successfully for user {user.ID_EN}")
+        
+        # Create a notification for the password change
+        notification = Notification(
+            user_id=current_user.ID_EN,
+            title="Modification de mot de passe",
+            message="Votre mot de passe a été changé avec succès.",
+            type='security',
+            is_read=False,
+            created_at=datetime.now()
+        )
+        db.session.add(notification)
+        db.session.commit()
         
         return jsonify({'status': 'success', 'message': 'Password updated successfully'})
     

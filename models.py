@@ -16,6 +16,7 @@ class Enseignant(db.Model, UserMixin):
     role = db.Column(db.String(10), nullable=False, default='teacher')  # Changed to String for SQLite compatibility
     fichiers = db.relationship('Fichier', backref='enseignant', lazy='dynamic')
     otp = db.Column(db.String(6), nullable=True)
+    otp_expires_at = db.Column(db.DateTime, nullable=True)  # Added for OTP expiration
     
     # For Flask-Login compatibility
     def get_id(self):
