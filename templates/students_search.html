@@ -55,9 +55,16 @@
                             <td>{{ student.Note_CC|default('-', true) }}</td>
                             <td>{{ student.Note_CF|default('-', true) }}</td>
                             <td>{{ student.Note_Projet|default('-', true) }}</td>
-                            <td>{{ student.Moyen|round(2)|default('-', true) }}</td>
+                            <td>{{ student.formatted_moyen }}</td>
                             <td>
-                                <a href="{{ url_for('grading') }}#edit-{{ student.Matricule_ET }}" class="btn btn-sm btn-primary">Edit Grades</a>
+                                <button class="btn btn-sm btn-primary edit-grades-btn" data-matricule="{{ student.Matricule_ET }}"
+                                    data-tp="{{ student.Note_TP|default('', true) }}" 
+                                    data-cc="{{ student.Note_CC|default('', true) }}" 
+                                    data-cf="{{ student.Note_CF|default('', true) }}" 
+                                    data-projet="{{ student.Note_Projet|default('', true) }}"
+                                    data-name="{{ student.Nom_ET_complet }}">
+                                    Edit Grades
+                                </button>
                                 <button class="btn btn-sm btn-danger delete-btn" data-matricule="{{ student.Matricule_ET }}">Delete</button>
                             </td>
                         </tr>
@@ -73,7 +80,50 @@
     </div>
 </div>
 
-<!-- JavaScript for delete functionality -->
+<!-- Grade Edit Modal -->
+<div class="modal fade" id="editGradesModal" tabindex="-1" role="dialog" aria-labelledby="editGradesModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="editGradesModalLabel">Edit Student Grades</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="editGradesForm">
+                    <input type="hidden" id="studentMatricule" name="matricule">
+                    <div class="form-group">
+                        <label for="studentName">Student Name</label>
+                        <input type="text" class="form-control" id="studentName" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="noteTP">TP Grade</label>
+                        <input type="number" class="form-control" id="noteTP" name="note_tp" step="0.01" min="0" max="20">
+                    </div>
+                    <div class="form-group">
+                        <label for="noteCC">CC Grade</label>
+                        <input type="number" class="form-control" id="noteCC" name="note_cc" step="0.01" min="0" max="20">
+                    </div>
+                    <div class="form-group">
+                        <label for="noteCF">CF Grade</label>
+                        <input type="number" class="form-control" id="noteCF" name="note_cf" step="0.01" min="0" max="20">
+                    </div>
+                    <div class="form-group">
+                        <label for="noteProjet">Project Grade</label>
+                        <input type="number" class="form-control" id="noteProjet" name="note_projet" step="0.01" min="0" max="20">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveGradesBtn">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for delete and edit functionality -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Delete student functionality
@@ -111,6 +161,79 @@ document.addEventListener('DOMContentLoaded', function() {
                     alert('An error occurred while deleting the student');
                 });
             }
+        });
+    });
+
+    // Edit grades functionality
+    document.querySelectorAll('.edit-grades-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const matricule = this.dataset.matricule;
+            const name = this.dataset.name;
+            const tp = this.dataset.tp;
+            const cc = this.dataset.cc;
+            const cf = this.dataset.cf;
+            const projet = this.dataset.projet;
+            
+            // Populate modal with student data
+            document.getElementById('studentMatricule').value = matricule;
+            document.getElementById('studentName').value = name;
+            document.getElementById('noteTP').value = tp;
+            document.getElementById('noteCC').value = cc;
+            document.getElementById('noteCF').value = cf;
+            document.getElementById('noteProjet').value = projet;
+            
+            // Show modal
+            $('#editGradesModal').modal('show');
+        });
+    });
+    
+    // Save grades functionality
+    document.getElementById('saveGradesBtn').addEventListener('click', function() {
+        const form = document.getElementById('editGradesForm');
+        const matricule = document.getElementById('studentMatricule').value;
+        const formData = new FormData(form);
+        
+        fetch('/update-student-grades', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Update the table row with new grades
+                const row = document.querySelector(`tr[data-matricule="${matricule}"]`);
+                if (row) {
+                    const tp = formData.get('note_tp') || '-';
+                    const cc = formData.get('note_cc') || '-';
+                    const cf = formData.get('note_cf') || '-';
+                    const projet = formData.get('note_projet') || '-';
+                    
+                    row.cells[2].textContent = tp; // TP Grade
+                    row.cells[3].textContent = cc; // CC Grade
+                    row.cells[4].textContent = cf; // CF Grade
+                    row.cells[5].textContent = projet; // Project Grade
+                    row.cells[6].textContent = data.average; // Updated average
+                    
+                    // Update the button's data attributes
+                    const editBtn = row.querySelector('.edit-grades-btn');
+                    editBtn.dataset.tp = formData.get('note_tp');
+                    editBtn.dataset.cc = formData.get('note_cc');
+                    editBtn.dataset.cf = formData.get('note_cf');
+                    editBtn.dataset.projet = formData.get('note_projet');
+                }
+                
+                // Close modal
+                $('#editGradesModal').modal('hide');
+                
+                // Show success message
+                alert('Grades updated successfully');
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating the grades');
         });
     });
 });
