@@ -29,7 +29,7 @@ else:
     logger.info(f"Email credentials loaded for: {email_username}")
 
 # Import auth related functions
-from auth import init_login_manager, login_route, logout_route, signup_route, verify_otp_route, forgot_password_route, reset_password_route
+from auth import init_login_manager, login_route, logout_route, signup_route, verify_otp_route
 
 # Create Flask app
 app = Flask(__name__)
