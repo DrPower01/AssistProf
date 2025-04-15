@@ -167,7 +167,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <!-- Step 1: Form for password changes -->
+                <!-- Step 1: Form for password change -->
                 <div id="passwordFormStep" class="step-content">
                     <form id="changePasswordForm">
                         <div class="mb-3">
@@ -191,9 +191,9 @@
                 <!-- Step 2: OTP verification for password change -->
                 <div id="passwordOtpVerificationStep" class="step-content d-none">
                     <div class="text-center mb-4">
-                        <i class="fas fa-key fa-3x text-primary mb-3"></i>
+                        <i class="fas fa-envelope-open-text fa-3x text-primary mb-3"></i>
                         <h5>Vérification OTP</h5>
-                        <p>Un code de vérification à usage unique a été envoyé à votre adresse email pour confirmer le changement de mot de passe.</p>
+                        <p>Un code de vérification à usage unique a été envoyé à votre adresse email.</p>
                     </div>
                     <div class="mb-4">
                         <label for="passwordOtpCode" class="form-label">Code de vérification</label>
@@ -210,12 +210,13 @@
                     <div class="text-center">
                         <button type="button" class="btn btn-link btn-sm d-none" id="resendPasswordOtpBtn">Renvoyer le code</button>
                     </div>
-                    <div class="alert alert-success d-none" id="passwordUpdateSuccess">
-                        Mot de passe mis à jour avec succès!
-                    </div>
-                    <div class="alert alert-danger d-none" id="passwordUpdateError">
-                        Une erreur s'est produite. Veuillez réessayer.
-                    </div>
+                </div>
+                
+                <div class="alert alert-success d-none" id="passwordUpdateSuccess">
+                    Mot de passe mis à jour avec succès!
+                </div>
+                <div class="alert alert-danger d-none" id="passwordUpdateError">
+                    Une erreur s'est produite. Veuillez réessayer.
                 </div>
             </div>
             <div class="modal-footer">
@@ -446,17 +447,74 @@
         styleElement.textContent = fixModalStyles;
         document.head.appendChild(styleElement);
         
-        // Profile update with OTP verification
-        const profileFormStep = document.getElementById('profileFormStep');
-        const otpVerificationStep = document.getElementById('otpVerificationStep');
-        const requestOtpBtn = document.getElementById('requestOtpBtn');
-        const verifyOtpBtn = document.getElementById('verifyOtpBtn');
-        const backToFormBtn = document.getElementById('backToFormBtn');
-        const resendOtpBtn = document.getElementById('resendOtpBtn');
-        const otpCode = document.getElementById('otpCode');
-        const timerCountdown = document.getElementById('timerCountdown');
+        // Form submissions
+        const editProfileForm = document.getElementById('editProfileForm');
+        const changePasswordForm = document.getElementById('changePasswordForm');
+        const notificationPreferencesForm = document.getElementById('notificationPreferencesForm');
         
-        // Password change with OTP verification
+        // Buttons
+        const saveProfileBtn = document.getElementById('saveProfileBtn');
+        const savePasswordBtn = document.getElementById('savePasswordBtn');
+        
+        // Alerts
+        const profileUpdateSuccess = document.getElementById('profileUpdateSuccess');
+        const profileUpdateError = document.getElementById('profileUpdateError');
+        const passwordUpdateSuccess = document.getElementById('passwordUpdateSuccess');
+        const passwordUpdateError = document.getElementById('passwordUpdateError');
+        
+        // Update profile
+        if (saveProfileBtn) {
+            saveProfileBtn.addEventListener('click', function() {
+                // Hide any previous alerts
+                profileUpdateSuccess.classList.add('d-none');
+                profileUpdateError.classList.add('d-none');
+                
+                // Get form data
+                const firstName = document.getElementById('firstName').value;
+                const lastName = document.getElementById('lastName').value;
+                const email = document.getElementById('email').value;
+                
+                // Validate form data
+                if (!firstName || !lastName || !email) {
+                    profileUpdateError.textContent = 'Tous les champs sont obligatoires';
+                    profileUpdateError.classList.remove('d-none');
+                    return;
+                }
+                
+                // Make AJAX request to update profile
+                fetch('/update-profile', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        'firstName': firstName,
+                        'lastName': lastName,
+                        'email': email
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        profileUpdateSuccess.classList.remove('d-none');
+                        // Reload page after 1 second to show updated info
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    } else {
+                        profileUpdateError.textContent = data.message || 'Une erreur s\'est produite';
+                        profileUpdateError.classList.remove('d-none');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    profileUpdateError.textContent = 'Une erreur de connexion s\'est produite';
+                    profileUpdateError.classList.remove('d-none');
+                });
+            });
+        }
+        
+        // Password update with OTP verification
         const passwordFormStep = document.getElementById('passwordFormStep');
         const passwordOtpVerificationStep = document.getElementById('passwordOtpVerificationStep');
         const requestPasswordOtpBtn = document.getElementById('requestPasswordOtpBtn');
@@ -465,12 +523,8 @@
         const resendPasswordOtpBtn = document.getElementById('resendPasswordOtpBtn');
         const passwordOtpCode = document.getElementById('passwordOtpCode');
         const passwordTimerCountdown = document.getElementById('passwordTimerCountdown');
-        const passwordUpdateSuccess = document.getElementById('passwordUpdateSuccess');
-        const passwordUpdateError = document.getElementById('passwordUpdateError');
         
-        let otpRequestData = null;
         let passwordOtpRequestData = null;
-        let countdownInterval = null;
         let passwordCountdownInterval = null;
         
         // Function to show OTP verification step for password change
@@ -503,7 +557,7 @@
             }
         }
         
-        // Function to start countdown timer for password change
+        // Function to start countdown timer for password OTP
         function startPasswordCountdownTimer(seconds) {
             let remainingTime = seconds;
             
@@ -532,7 +586,7 @@
             }, 1000);
         }
         
-        // Function to update the timer display for password change
+        // Function to update the timer display for password OTP
         function updatePasswordTimerDisplay(seconds) {
             const minutes = Math.floor(seconds / 60);
             const secs = seconds % 60;
@@ -540,7 +594,7 @@
             passwordTimerCountdown.parentElement.classList.remove('d-none');
         }
         
-        // Request OTP button handler for password change
+        // Request password OTP button handler
         if (requestPasswordOtpBtn) {
             requestPasswordOtpBtn.addEventListener('click', function() {
                 // Get form data
@@ -596,7 +650,7 @@
             });
         }
         
-        // Verify OTP button handler for password change
+        // Verify Password OTP button handler
         if (verifyPasswordOtpBtn) {
             verifyPasswordOtpBtn.addEventListener('click', function() {
                 const otp = passwordOtpCode.value.trim();
@@ -628,12 +682,14 @@
                 .then(data => {
                     if (data.status === 'success') {
                         passwordUpdateSuccess.classList.remove('d-none');
-                        // Close modal after a delay
+                        // Clear form fields after successful update
+                        document.getElementById('currentPassword').value = '';
+                        document.getElementById('newPassword').value = '';
+                        document.getElementById('confirmPassword').value = '';
+                        // Return to form step after a delay
                         setTimeout(() => {
-                            if (window.passwordModalInstance) {
-                                window.passwordModalInstance.hide();
-                            }
-                        }, 1500);
+                            showPasswordForm();
+                        }, 2000);
                     } else {
                         passwordUpdateError.textContent = data.message || 'Une erreur s\'est produite';
                         passwordUpdateError.classList.remove('d-none');
@@ -647,12 +703,12 @@
             });
         }
         
-        // Back button handler for password change
+        // Back button handler for password form
         if (backToPasswordFormBtn) {
             backToPasswordFormBtn.addEventListener('click', showPasswordForm);
         }
         
-        // Resend OTP button handler for password change
+        // Resend Password OTP button handler
         if (resendPasswordOtpBtn) {
             resendPasswordOtpBtn.addEventListener('click', function() {
                 // Request a new OTP
@@ -686,9 +742,233 @@
             });
         }
         
-        // Modal events to reset state for password change
+        // Modal events to reset state for password modal
         $('#changePasswordModal').on('hidden.bs.modal', function() {
             showPasswordForm();
+        });
+        
+        // Profile update with OTP verification
+        const profileFormStep = document.getElementById('profileFormStep');
+        const otpVerificationStep = document.getElementById('otpVerificationStep');
+        const requestOtpBtn = document.getElementById('requestOtpBtn');
+        const verifyOtpBtn = document.getElementById('verifyOtpBtn');
+        const backToFormBtn = document.getElementById('backToFormBtn');
+        const resendOtpBtn = document.getElementById('resendOtpBtn');
+        const otpCode = document.getElementById('otpCode');
+        const timerCountdown = document.getElementById('timerCountdown');
+        
+        let otpRequestData = null;
+        let countdownInterval = null;
+        
+        // Function to show OTP verification step
+        function showOtpVerification() {
+            profileFormStep.classList.add('d-none');
+            otpVerificationStep.classList.remove('d-none');
+            requestOtpBtn.classList.add('d-none');
+            verifyOtpBtn.classList.remove('d-none');
+            backToFormBtn.classList.remove('d-none');
+            startCountdownTimer(180); // 3 minutes countdown
+        }
+        
+        // Function to show profile form step
+        function showProfileForm() {
+            otpVerificationStep.classList.add('d-none');
+            profileFormStep.classList.remove('d-none');
+            verifyOtpBtn.classList.add('d-none');
+            backToFormBtn.classList.add('d-none');
+            requestOtpBtn.classList.remove('d-none');
+            
+            // Clear any previous OTP
+            otpCode.value = '';
+            profileUpdateSuccess.classList.add('d-none');
+            profileUpdateError.classList.add('d-none');
+            
+            // Clear timer
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+            }
+        }
+        
+        // Function to start countdown timer
+        function startCountdownTimer(seconds) {
+            let remainingTime = seconds;
+            
+            // Display initial time
+            updateTimerDisplay(remainingTime);
+            
+            // Hide resend button
+            resendOtpBtn.classList.add('d-none');
+            
+            // Clear any existing interval
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+            }
+            
+            // Start the interval
+            countdownInterval = setInterval(function() {
+                remainingTime--;
+                
+                if (remainingTime <= 0) {
+                    clearInterval(countdownInterval);
+                    resendOtpBtn.classList.remove('d-none');
+                    timerCountdown.parentElement.classList.add('d-none');
+                } else {
+                    updateTimerDisplay(remainingTime);
+                }
+            }, 1000);
+        }
+        
+        // Function to update the timer display
+        function updateTimerDisplay(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            timerCountdown.textContent = `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            timerCountdown.parentElement.classList.remove('d-none');
+        }
+        
+        // Request OTP button handler
+        if (requestOtpBtn) {
+            requestOtpBtn.addEventListener('click', function() {
+                // Get form data
+                const firstName = document.getElementById('firstName').value;
+                const lastName = document.getElementById('lastName').value;
+                const email = document.getElementById('email').value;
+                
+                // Validate form data
+                if (!firstName || !lastName || !email) {
+                    profileUpdateError.textContent = 'Tous les champs sont obligatoires';
+                    profileUpdateError.classList.remove('d-none');
+                    return;
+                }
+                
+                // Store form data for later use
+                otpRequestData = {
+                    firstName: firstName,
+                    lastName: lastName,
+                    email: email
+                };
+                
+                // Request OTP via API
+                fetch('/request-profile-otp', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        'email': email
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Show OTP verification step
+                        showOtpVerification();
+                    } else {
+                        profileUpdateError.textContent = data.message || 'Erreur lors de l\'envoi du code OTP';
+                        profileUpdateError.classList.remove('d-none');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    profileUpdateError.textContent = 'Une erreur de connexion s\'est produite';
+                    profileUpdateError.classList.remove('d-none');
+                });
+            });
+        }
+        
+        // Verify OTP button handler
+        if (verifyOtpBtn) {
+            verifyOtpBtn.addEventListener('click', function() {
+                const otp = otpCode.value.trim();
+                
+                // Validate OTP
+                if (!otp || otp.length !== 6) {
+                    profileUpdateError.textContent = 'Veuillez entrer un code OTP valide à 6 chiffres';
+                    profileUpdateError.classList.remove('d-none');
+                    return;
+                }
+                
+                // Hide any previous alerts
+                profileUpdateSuccess.classList.add('d-none');
+                profileUpdateError.classList.add('d-none');
+                
+                // Submit OTP and profile data
+                fetch('/update-profile', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        'firstName': otpRequestData.firstName,
+                        'lastName': otpRequestData.lastName,
+                        'email': otpRequestData.email,
+                        'otpCode': otp
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        profileUpdateSuccess.classList.remove('d-none');
+                        // Reload page after 1 second to show updated info
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    } else {
+                        profileUpdateError.textContent = data.message || 'Une erreur s\'est produite';
+                        profileUpdateError.classList.remove('d-none');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    profileUpdateError.textContent = 'Une erreur de connexion s\'est produite';
+                    profileUpdateError.classList.remove('d-none');
+                });
+            });
+        }
+        
+        // Back button handler
+        if (backToFormBtn) {
+            backToFormBtn.addEventListener('click', showProfileForm);
+        }
+        
+        // Resend OTP button handler
+        if (resendOtpBtn) {
+            resendOtpBtn.addEventListener('click', function() {
+                // Request a new OTP
+                fetch('/request-profile-otp', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        'email': otpRequestData.email,
+                        'resend': 'true'
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Restart the countdown
+                        startCountdownTimer(180);
+                        // Show feedback
+                        alert('Un nouveau code OTP a été envoyé à votre adresse email.');
+                    } else {
+                        profileUpdateError.textContent = data.message || 'Erreur lors de l\'envoi du code OTP';
+                        profileUpdateError.classList.remove('d-none');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    profileUpdateError.textContent = 'Une erreur de connexion s\'est produite';
+                    profileUpdateError.classList.remove('d-none');
+                });
+            });
+        }
+        
+        // Modal events to reset state
+        $('#editProfileModal').on('hidden.bs.modal', function() {
+            showProfileForm();
         });
     });
 </script>

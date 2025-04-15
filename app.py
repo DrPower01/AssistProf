@@ -1496,6 +1496,109 @@ L'équipe AssistProf
         logger.error(f"Error generating OTP: {str(e)}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
+# Generate and send OTP for password updates
+@app.route('/request-password-otp', methods=['POST'])
+@login_required
+def request_password_otp():
+    try:
+        current_password = request.form.get('currentPassword')
+        resend = request.form.get('resend') == 'true'
+        
+        # Validate current password if not a resend
+        if not resend and current_password:
+            # Get the current user's password field
+            user = db.session.get(Enseignant, current_user.ID_EN)
+            user_vars = vars(current_user)
+            
+            # Find the password field
+            possible_password_fields = [
+                'password', 'mot_de_passe', 'Password', 'mdp', 'password_hash', 
+                'Mot_de_passe_EN', 'MotDePasse', 'mot_de_passe_en', 'mdp_en', 
+                'password_hash_en', 'hashed_password'
+            ]
+            
+            password_field = None
+            password_value = None
+            
+            # Try to find the password in the instance variables
+            for field in possible_password_fields:
+                if field in user_vars:
+                    password_field = field
+                    password_value = user_vars[field]
+                    break
+            
+            # If not found in instance variables, check for attributes/properties
+            if not password_field:
+                for field in possible_password_fields:
+                    if hasattr(user, field):
+                        password_field = field
+                        password_value = getattr(user, field)
+                        break
+            
+            # If still not found, return error
+            if not password_field or not password_value:
+                return jsonify({
+                    'status': 'error',
+                    'message': 'Unable to verify password. Contact support.'
+                }), 500
+            
+            # Check if current password is correct
+            if not check_password_hash(password_value, current_password):
+                return jsonify({
+                    'status': 'error',
+                    'message': 'Le mot de passe actuel est incorrect'
+                }), 400
+        
+        # Generate a 6-digit OTP
+        otp = ''.join([str(random.randint(0, 9)) for _ in range(6)])
+        
+        # Store OTP in session with expiration time (10 minutes from now)
+        expiration_time = datetime.now() + timedelta(minutes=10)
+        session['password_update_otp'] = {
+            'code': otp,
+            'expires_at': expiration_time.timestamp()
+        }
+        
+        # Send OTP via email
+        subject = "Code de vérification pour le changement de mot de passe"
+        body = f"""Bonjour {current_user.Prenom_EN},
+
+Voici votre code de vérification à usage unique pour changer votre mot de passe:
+
+{otp}
+
+Ce code expire dans 10 minutes.
+
+Si vous n'avez pas demandé ce code, veuillez ignorer cet email ou contacter l'administrateur.
+
+Cordialement,
+L'équipe AssistProf
+"""
+        try:
+            msg = Message(
+                subject=subject,
+                recipients=[current_user.Email_EN],
+                body=body
+            )
+            mail.send(msg)
+            logger.info(f"Password change OTP sent to {current_user.Email_EN}")
+            
+            # Return success
+            return jsonify({
+                'status': 'success',
+                'message': 'OTP sent successfully'
+            })
+        except Exception as e:
+            logger.error(f"Failed to send password OTP email: {str(e)}")
+            return jsonify({
+                'status': 'error',
+                'message': f"Failed to send OTP email: {str(e)}"
+            }), 500
+            
+    except Exception as e:
+        logger.error(f"Error generating password OTP: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
 @app.route('/update-password', methods=['POST'])
 @login_required
 def update_password():
@@ -1503,19 +1606,34 @@ def update_password():
         # Get form data
         current_password = request.form.get('currentPassword')
         new_password = request.form.get('newPassword')
+        otp_code = request.form.get('otpCode')
         
         # Validate data
         if not all([current_password, new_password]):
             return jsonify({'status': 'error', 'message': 'All fields are required'}), 400
         
-        # Improved debugging information
-        logger.info(f"User ID: {current_user.ID_EN}")
-        logger.info(f"User class: {current_user.__class__.__name__}")
-        
-        # Get the current user's class variables
-        user_vars = vars(current_user)
-        logger.info(f"User object variables: {user_vars.keys()}")
-        
+        # Verify OTP if provided
+        if otp_code:
+            # Check if OTP exists in session
+            if 'password_update_otp' not in session:
+                return jsonify({'status': 'error', 'message': 'OTP not requested or expired'}), 400
+                
+            # Get OTP data from session
+            otp_data = session.get('password_update_otp')
+            
+            # Check if OTP is expired
+            if datetime.now().timestamp() > otp_data.get('expires_at', 0):
+                # Clean up session
+                session.pop('password_update_otp', None)
+                return jsonify({'status': 'error', 'message': 'OTP expired. Please request a new one'}), 400
+                
+            # Check if OTP is correct
+            if otp_code != otp_data.get('code'):
+                return jsonify({'status': 'error', 'message': 'Invalid OTP'}), 400
+        else:
+            # OTP is required
+            return jsonify({'status': 'error', 'message': 'OTP verification required'}), 400
+            
         # Get a fresh instance from the database 
         user = db.session.get(Enseignant, current_user.ID_EN)
         
@@ -1526,11 +1644,10 @@ def update_password():
             'password_hash_en', 'hashed_password'
         ]
         
-        # Print all the attributes of the user object for debugging
-        all_attrs = dir(user)
-        logger.info(f"All user attributes: {all_attrs}")
+        # Get all user variables
+        user_vars = vars(user)
         
-        # First try to extract from user_vars (direct instance variables)
+        # Find the password field
         password_field = None
         password_value = None
         
@@ -1539,7 +1656,6 @@ def update_password():
             if field in user_vars:
                 password_field = field
                 password_value = user_vars[field]
-                logger.info(f"Found password field in vars: {field}")
                 break
         
         # If not found in instance variables, check for attributes/properties
@@ -1548,53 +1664,16 @@ def update_password():
                 if hasattr(user, field):
                     password_field = field
                     password_value = getattr(user, field)
-                    logger.info(f"Found password field in attributes: {field}")
                     break
         
-        # Manual query if the field is still not found
-        if not password_field:
-            logger.info("Trying direct database query to find password field")
-            try:
-                # Connect directly to the database
-                engine = db.get_engine()
-                with engine.connect() as connection:
-                    # Query the database schema for the Enseignant table
-                    result = connection.execute(text("SHOW COLUMNS FROM enseignant"))
-                    columns = [row[0] for row in result]
-                    logger.info(f"Columns in enseignant table: {columns}")
-                    
-                    # Look for password-like columns
-                    for col in columns:
-                        if any(pw_term in col.lower() for pw_term in ['password', 'mot', 'passe', 'mdp']):
-                            # Found a likely password column
-                            password_field = col
-                            logger.info(f"Found likely password column in schema: {col}")
-                            
-                            # Now get the current value
-                            result = connection.execute(
-                                text(f"SELECT {col} FROM enseignant WHERE ID_EN = :id"),
-                                {"id": current_user.ID_EN}
-                            )
-                            row = result.fetchone()
-                            if row:
-                                password_value = row[0]
-                                break
-            except Exception as e:
-                logger.error(f"Database inspection error: {e}")
-        
-        # If still not found, return a detailed error with more information
+        # If still not found, return a detailed error
         if not password_field or not password_value:
             return jsonify({
                 'status': 'error',
-                'message': 'Password field not found. Contact support with these details:',
-                'debug_info': {
-                    'vars_keys': list(user_vars.keys()),
-                    'dir_attrs': all_attrs
-                }
+                'message': 'Password field not found. Contact support.'
             }), 500
         
         # Check if current password is correct using the found password value
-        logger.info(f"Checking password with field: {password_field}")
         if not check_password_hash(password_value, current_password):
             return jsonify({'status': 'error', 'message': 'Current password is incorrect'}), 400
         
@@ -1602,6 +1681,10 @@ def update_password():
         setattr(user, password_field, generate_password_hash(new_password))
         
         db.session.commit()
+        
+        # Clean up session
+        session.pop('password_update_otp', None)
+        
         logger.info(f"Password updated successfully for user {user.ID_EN}")
         
         return jsonify({'status': 'success', 'message': 'Password updated successfully'})
