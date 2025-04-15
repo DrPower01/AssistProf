@@ -1313,6 +1313,307 @@ def mark_notification_read(notification_id):
     
     return jsonify({'status': 'error', 'message': 'Notification not found'}), 404
 
+# Profile route
+@app.route('/profile')
+@login_required
+def profile():
+    # Get stats for the current user
+    stats = {
+        'students_count': Etudiants.query.filter_by(ID_EN=current_user.ID_EN).count(),
+        'documents_count': Document.query.filter_by(user_id=current_user.ID_EN).count(),
+        'schedule_count': EmploiDuTemps.query.filter_by(ID_EN=current_user.ID_EN).count(),
+        'departments_count': db.session.query(db.func.count(db.distinct(Etudiants.Departement))).filter(
+            Etudiants.ID_EN == current_user.ID_EN,
+            Etudiants.Departement != None,
+            Etudiants.Departement != ''
+        ).scalar() or 0
+    }
+    
+    # Get notification preferences (default values if not set)
+    preferences = {
+        'email_notifications': True,
+        'schedule_reminders': True,
+        'student_grade_notifications': False,
+        'reminder_time': 30
+    }
+    
+    # Recent activities (placeholder - can be implemented with a proper activity log)
+    recent_activities = [
+        {
+            'title': 'Connexion au système',
+            'description': 'Dernière connexion réussie',
+            'date': datetime.now() - timedelta(days=0, hours=2)
+        },
+        {
+            'title': 'Ajout de documents',
+            'description': 'Vous avez ajouté de nouveaux documents',
+            'date': datetime.now() - timedelta(days=2)
+        },
+        {
+            'title': 'Modification d\'emploi du temps',
+            'description': 'Vous avez mis à jour votre emploi du temps',
+            'date': datetime.now() - timedelta(days=5)
+        }
+    ]
+    
+    return render_template('profile.html', 
+                          stats=stats, 
+                          preferences=preferences, 
+                          recent_activities=recent_activities,
+                          unread_notifications=Notification.query.filter_by(
+                              user_id=current_user.ID_EN,
+                              is_read=False
+                          ).count())
+
+@app.route('/update-profile', methods=['POST'])
+@login_required
+def update_profile():
+    try:
+        # Get form data
+        first_name = request.form.get('firstName')
+        last_name = request.form.get('lastName')
+        email = request.form.get('email')
+        otp_code = request.form.get('otpCode')
+        
+        # Validate data
+        if not all([first_name, last_name, email]):
+            return jsonify({'status': 'error', 'message': 'All fields are required'}), 400
+            
+        # Verify OTP if provided
+        if otp_code:
+            # Check if OTP exists in session
+            if 'profile_update_otp' not in session:
+                return jsonify({'status': 'error', 'message': 'OTP not requested or expired'}), 400
+                
+            # Get OTP data from session
+            otp_data = session.get('profile_update_otp')
+            
+            # Check if OTP is expired
+            if datetime.now().timestamp() > otp_data.get('expires_at', 0):
+                # Clean up session
+                session.pop('profile_update_otp', None)
+                return jsonify({'status': 'error', 'message': 'OTP expired. Please request a new one'}), 400
+                
+            # Check if OTP is correct
+            if otp_code != otp_data.get('code'):
+                return jsonify({'status': 'error', 'message': 'Invalid OTP'}), 400
+                
+            # Check if email matches the one used to request OTP
+            if email != otp_data.get('email'):
+                return jsonify({'status': 'error', 'message': 'Email mismatch. Please restart the process'}), 400
+        else:
+            # OTP is required
+            return jsonify({'status': 'error', 'message': 'OTP verification required'}), 400
+            
+        # Check if email already exists for another user
+        existing_user = Enseignant.query.filter(
+            Enseignant.Email_EN == email,
+            Enseignant.ID_EN != current_user.ID_EN
+        ).first()
+        
+        if existing_user:
+            return jsonify({'status': 'error', 'message': 'Email already in use by another account'}), 400
+            
+        # Update user
+        current_user.Prenom_EN = first_name
+        current_user.Nom_EN = last_name
+        current_user.Email_EN = email
+        
+        db.session.commit()
+        
+        # Clean up session
+        session.pop('profile_update_otp', None)
+        
+        # Log the successful update
+        logger.info(f"Profile updated for user {current_user.ID_EN}")
+        
+        return jsonify({'status': 'success', 'message': 'Profile updated successfully'})
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error updating profile: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+# Generate and send OTP for profile updates
+@app.route('/request-profile-otp', methods=['POST'])
+@login_required
+def request_profile_otp():
+    try:
+        email = request.form.get('email')
+        resend = request.form.get('resend') == 'true'
+        
+        # Validate email
+        if not email:
+            return jsonify({'status': 'error', 'message': 'Email is required'}), 400
+        
+        # Generate a 6-digit OTP
+        otp = ''.join([str(random.randint(0, 9)) for _ in range(6)])
+        
+        # Store OTP in session with expiration time (10 minutes from now)
+        expiration_time = datetime.now() + timedelta(minutes=10)
+        session['profile_update_otp'] = {
+            'code': otp,
+            'expires_at': expiration_time.timestamp(),
+            'email': email
+        }
+        
+        # Send OTP via email
+        subject = "Code de vérification pour la modification de profil"
+        body = f"""Bonjour {current_user.Prenom_EN},
+
+Voici votre code de vérification à usage unique pour modifier votre profil:
+
+{otp}
+
+Ce code expire dans 10 minutes.
+
+Si vous n'avez pas demandé ce code, veuillez ignorer cet email ou contacter l'administrateur.
+
+Cordialement,
+L'équipe AssistProf
+"""
+        try:
+            msg = Message(
+                subject=subject,
+                recipients=[current_user.Email_EN],  # Always send to current email
+                body=body
+            )
+            mail.send(msg)
+            logger.info(f"OTP sent to {current_user.Email_EN} for profile update")
+            
+            # Return success
+            return jsonify({
+                'status': 'success',
+                'message': 'OTP sent successfully'
+            })
+        except Exception as e:
+            logger.error(f"Failed to send OTP email: {str(e)}")
+            return jsonify({
+                'status': 'error',
+                'message': f"Failed to send OTP email: {str(e)}"
+            }), 500
+            
+    except Exception as e:
+        logger.error(f"Error generating OTP: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/update-password', methods=['POST'])
+@login_required
+def update_password():
+    try:
+        # Get form data
+        current_password = request.form.get('currentPassword')
+        new_password = request.form.get('newPassword')
+        
+        # Validate data
+        if not all([current_password, new_password]):
+            return jsonify({'status': 'error', 'message': 'All fields are required'}), 400
+        
+        # Improved debugging information
+        logger.info(f"User ID: {current_user.ID_EN}")
+        logger.info(f"User class: {current_user.__class__.__name__}")
+        
+        # Get the current user's class variables
+        user_vars = vars(current_user)
+        logger.info(f"User object variables: {user_vars.keys()}")
+        
+        # Get a fresh instance from the database 
+        user = db.session.get(Enseignant, current_user.ID_EN)
+        
+        # Try more possible password field names
+        possible_password_fields = [
+            'password', 'mot_de_passe', 'Password', 'mdp', 'password_hash', 
+            'Mot_de_passe_EN', 'MotDePasse', 'mot_de_passe_en', 'mdp_en', 
+            'password_hash_en', 'hashed_password'
+        ]
+        
+        # Print all the attributes of the user object for debugging
+        all_attrs = dir(user)
+        logger.info(f"All user attributes: {all_attrs}")
+        
+        # First try to extract from user_vars (direct instance variables)
+        password_field = None
+        password_value = None
+        
+        # Try to find the password in the instance variables
+        for field in possible_password_fields:
+            if field in user_vars:
+                password_field = field
+                password_value = user_vars[field]
+                logger.info(f"Found password field in vars: {field}")
+                break
+        
+        # If not found in instance variables, check for attributes/properties
+        if not password_field:
+            for field in possible_password_fields:
+                if hasattr(user, field):
+                    password_field = field
+                    password_value = getattr(user, field)
+                    logger.info(f"Found password field in attributes: {field}")
+                    break
+        
+        # Manual query if the field is still not found
+        if not password_field:
+            logger.info("Trying direct database query to find password field")
+            try:
+                # Connect directly to the database
+                engine = db.get_engine()
+                with engine.connect() as connection:
+                    # Query the database schema for the Enseignant table
+                    result = connection.execute(text("SHOW COLUMNS FROM enseignant"))
+                    columns = [row[0] for row in result]
+                    logger.info(f"Columns in enseignant table: {columns}")
+                    
+                    # Look for password-like columns
+                    for col in columns:
+                        if any(pw_term in col.lower() for pw_term in ['password', 'mot', 'passe', 'mdp']):
+                            # Found a likely password column
+                            password_field = col
+                            logger.info(f"Found likely password column in schema: {col}")
+                            
+                            # Now get the current value
+                            result = connection.execute(
+                                text(f"SELECT {col} FROM enseignant WHERE ID_EN = :id"),
+                                {"id": current_user.ID_EN}
+                            )
+                            row = result.fetchone()
+                            if row:
+                                password_value = row[0]
+                                break
+            except Exception as e:
+                logger.error(f"Database inspection error: {e}")
+        
+        # If still not found, return a detailed error with more information
+        if not password_field or not password_value:
+            return jsonify({
+                'status': 'error',
+                'message': 'Password field not found. Contact support with these details:',
+                'debug_info': {
+                    'vars_keys': list(user_vars.keys()),
+                    'dir_attrs': all_attrs
+                }
+            }), 500
+        
+        # Check if current password is correct using the found password value
+        logger.info(f"Checking password with field: {password_field}")
+        if not check_password_hash(password_value, current_password):
+            return jsonify({'status': 'error', 'message': 'Current password is incorrect'}), 400
+        
+        # Update password - now that we know the correct field
+        setattr(user, password_field, generate_password_hash(new_password))
+        
+        db.session.commit()
+        logger.info(f"Password updated successfully for user {user.ID_EN}")
+        
+        return jsonify({'status': 'success', 'message': 'Password updated successfully'})
+    
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Password update error: {str(e)}")
+        return jsonify({
+            'status': 'error', 
+            'message': f"Error updating password: {str(e)}"
+        }), 500
+
 @app.route('/notifications/mark-all-read', methods=['POST'])
 @login_required
 def mark_all_notifications_read():
