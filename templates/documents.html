@@ -1,98 +1,152 @@
 {% extends 'base.html' %}
 
-{% block title %}Document Search Results{% endblock %}
+{% block title %}Gestion des Documents{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-search me-2"></i> Document Search Results
-                    </h5>
-                    <div class="d-flex align-items-center">
-                        <form action="{{ url_for('search_documents') }}" method="GET" class="d-flex">
-                            <div class="input-group me-2" style="max-width: 300px;">
-                                <input type="text" name="query" class="form-control" placeholder="Search documents..." 
-                                       value="{{ search_query|default('', true) }}">
-                                <select name="category" class="form-select" style="max-width: 120px;">
-                                    <option value="all" {% if category == 'all' %}selected{% endif %}>All</option>
-                                    <option value="cours" {% if category == 'cours' %}selected{% endif %}>Cours</option>
-                                    <option value="td" {% if category == 'td' %}selected{% endif %}>TD</option>
-                                    <option value="tp" {% if category == 'tp' %}selected{% endif %}>TP</option>
-                                    <option value="autre" {% if category == 'autre' %}selected{% endif %}>Autre</option>
-                                </select>
-                                <button class="btn btn-primary" type="submit">
-                                    <i class="fas fa-search"></i>
-                                </button>
-                            </div>
-                            <a href="{{ url_for('documents') }}" class="btn btn-secondary">
-                                <i class="fas fa-times"></i> Clear
-                            </a>
+        <!-- Document Upload Form -->
+        <div class="col-md-4">
+            <div class="card shadow-sm border-primary border-top border-top-3">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0"><i class="fas fa-file-upload me-2"></i>Téléverser un Document</h5>
+                </div>
+                <div class="card-body">
+                    <form id="uploadDocumentForm" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="documentTitle" class="form-label"><i class="fas fa-heading me-1 text-primary"></i>Titre du Document</label>
+                            <input type="text" class="form-control" id="documentTitle" name="title" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="documentCategory" class="form-label"><i class="fas fa-folder me-1 text-warning"></i>Catégorie</label>
+                            <select class="form-select" id="documentCategory" name="category">
+                                <option value="cours">📚 Cours</option>
+                                <option value="td">📝 TD</option>
+                                <option value="tp">🔬 TP</option>
+                                <option value="autre">📄 Autre</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="documentFile" class="form-label"><i class="fas fa-file me-1 text-success"></i>Sélectionner un Fichier</label>
+                            <input class="form-control" type="file" id="documentFile" name="document" required>
+                            <div class="form-text"><i class="fas fa-info-circle text-info"></i> Taille maximale: 10Mo</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="documentDescription" class="form-label"><i class="fas fa-align-left me-1 text-secondary"></i>Description (optionnel)</label>
+                            <textarea class="form-control" id="documentDescription" name="description" rows="3"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 py-2">
+                            <i class="fas fa-cloud-upload-alt me-2"></i> Téléverser
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Documents List -->
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0"><i class="fas fa-file-alt me-2 text-primary"></i>Documents</h5>
+                    <div class="input-group" style="max-width: 300px;">
+                        <form action="/search-documents" method="GET" class="d-flex w-100">
+                            <input type="text" name="query" id="searchDocumentInput" class="form-control" 
+                                   placeholder="Rechercher des documents..." value="{{ search_query|default('', true) }}">
+                            <select name="category" class="form-select" style="max-width: 100px;">
+                                <option value="all">Tous</option>
+                                <option value="cours">Cours</option>
+                                <option value="td">TD</option>
+                                <option value="tp">TP</option>
+                                <option value="autre">Autre</option>
+                            </select>
+                            <button class="btn btn-primary" type="submit" id="searchDocumentButton">
+                                <i class="fas fa-search"></i>
+                            </button>
                         </form>
                     </div>
                 </div>
                 <div class="card-body">
                     {% if search_query %}
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        Showing results for: <strong>"{{ search_query }}"</strong>
-                        {% if category != 'all' %}
-                            in category: <strong>{{ category|title }}</strong>
-                        {% endif %}
+                    <div class="alert alert-info alert-dismissible fade show" role="alert">
+                        <div>
+                            <i class="fas fa-search me-2"></i><strong>Résultats de recherche pour: "{{ search_query }}"</strong>
+                            {% if category and category != 'all' %}
+                                dans la catégorie: <strong>{{ category|title }}</strong>
+                            {% endif %}
+                        </div>
+                        <a href="/documents" class="btn btn-sm btn-outline-info ms-2"><i class="fas fa-times me-1"></i>Effacer la recherche</a>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                     {% endif %}
                     
+                    <div class="mb-3">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-primary active" data-filter="all"><i class="fas fa-globe me-1"></i> Tous</button>
+                            <button type="button" class="btn btn-outline-primary" data-filter="cours"><i class="fas fa-book me-1"></i> Cours</button>
+                            <button type="button" class="btn btn-outline-primary" data-filter="td"><i class="fas fa-pencil-alt me-1"></i> TD</button>
+                            <button type="button" class="btn btn-outline-primary" data-filter="tp"><i class="fas fa-flask me-1"></i> TP</button>
+                            <button type="button" class="btn btn-outline-primary" data-filter="autre"><i class="fas fa-folder-open me-1"></i> Autre</button>
+                        </div>
+                    </div>
                     <div class="table-responsive">
-                        <table class="table table-striped table-hover">
-                            <thead>
+                        <table class="table table-striped table-hover border">
+                            <thead class="table-light">
                                 <tr>
                                     <th style="width: 50px;">Format</th>
-                                    <th>Title</th>
-                                    <th>Category</th>
+                                    <th>Titre</th>
+                                    <th>Nom du fichier</th>
+                                    <th>Catégorie</th>
                                     <th>Description</th>
-                                    <th>Upload Date</th>
-                                    <th>Size</th>
+                                    <th><i class="far fa-calendar-alt me-1"></i>Date</th>
+                                    <th><i class="fas fa-weight me-1"></i>Taille</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
-                            <tbody id="searchResultsList">
+                            <tbody id="documentsList">
                                 {% for doc in documents %}
-                                <tr id="document-{{ doc.id }}" data-category="{{ doc.category }}">
+                                <tr id="document-{{ doc.id }}" data-category="{{ doc.category }}" class="align-middle">
                                     <td class="text-center">
                                         {% set ext = doc.filename.split('.')[-1].lower() %}
                                         {% if ext in ['pdf'] %}
-                                            <i class="fas fa-file-pdf text-danger" title="PDF Document"></i>
+                                            <i class="fas fa-file-pdf text-danger fa-2x" title="PDF Document"></i>
                                         {% elif ext in ['doc', 'docx'] %}
-                                            <i class="fas fa-file-word text-primary" title="Word Document"></i>
+                                            <i class="fas fa-file-word text-primary fa-2x" title="Word Document"></i>
                                         {% elif ext in ['xls', 'xlsx', 'csv'] %}
-                                            <i class="fas fa-file-excel text-success" title="Spreadsheet"></i>
+                                            <i class="fas fa-file-excel text-success fa-2x" title="Spreadsheet"></i>
                                         {% elif ext in ['ppt', 'pptx'] %}
-                                            <i class="fas fa-file-powerpoint text-warning" title="Presentation"></i>
+                                            <i class="fas fa-file-powerpoint text-warning fa-2x" title="Presentation"></i>
                                         {% elif ext in ['jpg', 'jpeg', 'png', 'gif', 'bmp'] %}
-                                            <i class="fas fa-file-image text-info" title="Image"></i>
+                                            <i class="fas fa-file-image text-info fa-2x" title="Image"></i>
                                         {% elif ext in ['zip', 'rar', '7z', 'tar', 'gz'] %}
-                                            <i class="fas fa-file-archive text-secondary" title="Archive"></i>
+                                            <i class="fas fa-file-archive text-secondary fa-2x" title="Archive"></i>
                                         {% elif ext in ['txt', 'md'] %}
-                                            <i class="fas fa-file-alt text-secondary" title="Text Document"></i>
+                                            <i class="fas fa-file-alt text-secondary fa-2x" title="Text Document"></i>
                                         {% else %}
-                                            <i class="fas fa-file text-muted" title="File"></i>
+                                            <i class="fas fa-file text-muted fa-2x" title="File"></i>
                                         {% endif %}
-                                        <div class="small text-muted">{{ ext|upper }}</div>
+                                        <div class="badge bg-secondary mt-1">{{ ext|upper }}</div>
                                     </td>
-                                    <td>{{ doc.title }}</td>
-                                    <td>{{ doc.category|title }}</td>
+                                    <td class="fw-bold">{{ doc.title }}</td>
+                                    <td><small class="text-muted">{{ doc.filename }}</small></td>
+                                    <td>
+                                        <span class="badge bg-{% if doc.category == 'cours' %}primary{% elif doc.category == 'td' %}success{% elif doc.category == 'tp' %}warning{% else %}secondary{% endif %} px-3 py-2">
+                                            {% if doc.category == 'cours' %}<i class="fas fa-book me-1"></i>
+                                            {% elif doc.category == 'td' %}<i class="fas fa-pencil-alt me-1"></i>
+                                            {% elif doc.category == 'tp' %}<i class="fas fa-flask me-1"></i>
+                                            {% else %}<i class="fas fa-folder-open me-1"></i>{% endif %}
+                                            {{ doc.category|title }}
+                                        </span>
+                                    </td>
                                     <td>{{ doc.description or '-' }}</td>
-                                    <td>{{ doc.upload_date.strftime('%Y-%m-%d') }}</td>
-                                    <td>{{ doc.size_formatted }}</td>
+                                    <td><i class="far fa-calendar-alt text-muted me-1"></i>{{ doc.upload_date.strftime('%Y-%m-%d') }}</td>
+                                    <td><i class="fas fa-hdd text-muted me-1"></i>{{ doc.size_formatted }}</td>
                                     <td>
                                         <div class="btn-group">
-                                            <a href="/download-document/{{ doc.id }}" class="btn btn-sm btn-success">
-                                                <i class="bi bi-download"></i> Download
+                                            <a href="/download-document/{{ doc.id }}" class="btn btn-sm btn-outline-success">
+                                                <i class="fas fa-download me-1"></i> Télécharger
                                             </a>
-                                            <button class="btn btn-sm btn-danger delete-doc-btn" data-document-id="{{ doc.id }}">
-                                                <i class="bi bi-trash"></i> Delete
+                                            <button class="btn btn-sm btn-outline-danger delete-doc-btn" data-document-id="{{ doc.id }}">
+                                                <i class="fas fa-trash-alt me-1"></i> Supprimer
                                             </button>
                                         </div>
                                     </td>
@@ -101,29 +155,18 @@
                             </tbody>
                         </table>
                     </div>
-                    
-                    {% if documents|length == 0 %}
-                    <div class="text-center py-5">
-                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
-                        <h5 class="text-muted">No documents found</h5>
-                        <p class="text-muted">
-                            {% if search_query %}
-                                No documents match your search criteria.
-                            {% else %}
-                                You haven't uploaded any documents yet.
-                            {% endif %}
-                        </p>
-                        <a href="{{ url_for('documents') }}" class="btn btn-primary mt-2">
-                            <i class="fas fa-arrow-left me-2"></i> Back to Documents
-                        </a>
-                    </div>
-                    {% endif %}
-                    
-                    {% if documents|length > 0 %}
-                    <div class="mt-3">
-                        <p class="text-muted">
-                            Found {{ documents|length }} document{% if documents|length != 1 %}s{% endif %}
-                        </p>
+                    {% if not documents %}
+                    <div class="text-center py-4">
+                        <div class="text-muted">
+                            <i class="fas fa-folder-open fa-4x mb-3 text-light"></i>
+                            <p>
+                                {% if search_query %}
+                                    Aucun document ne correspond à vos critères de recherche.
+                                {% else %}
+                                    Aucun document n'a été téléversé
+                                {% endif %}
+                            </p>
+                        </div>
                     </div>
                     {% endif %}
                 </div>
@@ -132,13 +175,67 @@
     </div>
 </div>
 
+<!-- View Document Modal -->
+<div class="modal fade" id="viewDocumentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="documentViewTitle"><i class="fas fa-file-alt me-2"></i><span id="modalDocTitle"></span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="documentViewContent">
+                <!-- Document content will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-1"></i>Fermer</button>
+                <a href="#" class="btn btn-primary" id="downloadDocumentBtn"><i class="fas fa-download me-1"></i>Télécharger</a>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Upload document form submission
+        document.getElementById('uploadDocumentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            
+            const uploadBtn = this.querySelector('button[type="submit"]');
+            const originalBtnText = uploadBtn.innerHTML;
+            uploadBtn.disabled = true;
+            uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Téléversement...';
+            
+            fetch('/upload-document', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = originalBtnText;
+                
+                if (data.status === 'success') {
+                    alert('Document téléversé avec succès!');
+                    // Reload the page to show the new document
+                    window.location.reload();
+                } else {
+                    alert('Erreur: ' + data.message);
+                }
+            })
+            .catch(error => {
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = originalBtnText;
+                console.error('Error:', error);
+                alert('Une erreur est survenue. Veuillez réessayer.');
+            });
+        });
+
         // Delete document functionality
         document.querySelectorAll('.delete-doc-btn').forEach(button => {
             button.addEventListener('click', function() {
                 const documentId = this.dataset.documentId;
-                if (confirm('Are you sure you want to delete this document? This action cannot be undone.')) {
+                if (confirm('Êtes-vous sûr de vouloir supprimer ce document? Cette action ne peut pas être annulée.')) {
                     fetch(`/delete-document/${documentId}`, {
                         method: 'POST'
                     })
@@ -146,40 +243,151 @@
                     .then(data => {
                         if (data.status === 'success') {
                             document.getElementById(`document-${documentId}`).remove();
-                            
-                            // Update the document count
-                            const remainingDocs = document.querySelectorAll('#searchResultsList tr').length;
-                            if (remainingDocs === 0) {
-                                // No documents left, refresh to show "no documents" message
-                                window.location.reload();
-                            }
-                            
-                            alert('Document deleted successfully!');
+                            alert('Document supprimé avec succès!');
                         } else {
-                            alert('Error: ' + data.message);
+                            alert('Erreur: ' + data.message);
                         }
                     })
                     .catch(error => {
                         console.error('Error:', error);
-                        alert('An error occurred. Please try again.');
+                        alert('Une erreur est survenue. Veuillez réessayer.');
                     });
                 }
             });
         });
 
-        // Highlight search terms
+        // Client-side search functionality (for filtering displayed results)
+        document.getElementById('searchDocumentInput').addEventListener('keyup', function(e) {
+            // If the form will handle search, only activate this on Enter key
+            if (e.key === 'Enter') {
+                return; // Let the form handle it
+            }
+            
+            // Otherwise provide instant filtering
+            const query = this.value.trim().toLowerCase();
+            const rows = document.querySelectorAll('#documentsList tr');
+            let hasVisibleRows = false;
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                // Check if file contains query text
+                if (text.includes(query)) {
+                    row.style.display = '';
+                    hasVisibleRows = true;
+                    
+                    // Highlight the matched text if query is not empty
+                    if (query) {
+                        const filename = row.querySelector('td:nth-child(3)');
+                        const title = row.querySelector('td:nth-child(2)');
+                        
+                        // Reset previous highlights
+                        filename.innerHTML = `<small class="text-muted">${filename.textContent}</small>`;
+                        title.textContent = title.textContent;
+                        
+                        // Apply new highlights
+                        if (filename.textContent.toLowerCase().includes(query)) {
+                            const text = filename.textContent;
+                            const regExp = new RegExp(query, 'gi');
+                            filename.innerHTML = `<small class="text-muted">${text.replace(regExp, match => `<mark>${match}</mark>`)}</small>`;
+                        }
+                        
+                        if (title.textContent.toLowerCase().includes(query)) {
+                            const text = title.textContent;
+                            const regExp = new RegExp(query, 'gi');
+                            title.innerHTML = text.replace(regExp, match => `<mark>${match}</mark>`);
+                        }
+                    }
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            // Show "no results" message if needed
+            const noResultsMsg = document.querySelector('#documentsList + .text-center');
+            if (noResultsMsg) {
+                if (!hasVisibleRows && query) {
+                    noResultsMsg.style.display = 'block';
+                    noResultsMsg.querySelector('p').textContent = 'Aucun document ne correspond à vos critères de recherche.';
+                } else if (!hasVisibleRows) {
+                    noResultsMsg.style.display = 'block';
+                    noResultsMsg.querySelector('p').textContent = 'Aucun document n\'a été téléversé.';
+                } else {
+                    noResultsMsg.style.display = 'none';
+                }
+            }
+        });
+
+        // Category filter functionality
+        document.querySelectorAll('.btn-group[role="group"] button').forEach(button => {
+            button.addEventListener('click', function() {
+                // Update active button
+                document.querySelectorAll('.btn-group[role="group"] button').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                this.classList.add('active');
+                
+                const filter = this.dataset.filter;
+                const rows = document.querySelectorAll('#documentsList tr');
+                let hasVisibleRows = false;
+                
+                rows.forEach(row => {
+                    if (filter === 'all' || row.dataset.category === filter) {
+                        row.style.display = '';
+                        hasVisibleRows = true;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+                
+                // Show "no results" message if needed
+                const noResultsMsg = document.querySelector('#documentsList + .text-center');
+                if (noResultsMsg) {
+                    if (!hasVisibleRows && filter !== 'all') {
+                        noResultsMsg.style.display = 'block';
+                        noResultsMsg.querySelector('p').textContent = `Aucun document trouvé dans la catégorie: ${filter}.`;
+                    } else if (!hasVisibleRows) {
+                        noResultsMsg.style.display = 'block';
+                        noResultsMsg.querySelector('p').textContent = 'Aucun document n\'a été téléversé.';
+                    } else {
+                        noResultsMsg.style.display = 'none';
+                    }
+                }
+            });
+        });
+        
+        // Highlight search terms if we're on search results
+        {% if search_query %}
         const searchQuery = "{{ search_query|default('', true) }}".toLowerCase();
         if (searchQuery) {
-            const contentCells = document.querySelectorAll('#searchResultsList td:nth-child(2), #searchResultsList td:nth-child(4)');
-            
-            contentCells.forEach(cell => {
-                const text = cell.textContent;
-                if (text.toLowerCase().includes(searchQuery)) {
-                    const regex = new RegExp(`(${searchQuery})`, 'gi');
-                    cell.innerHTML = text.replace(regex, '<mark>$1</mark>');
+            const rows = document.querySelectorAll('#documentsList tr');
+            rows.forEach(row => {
+                const filename = row.querySelector('td:nth-child(3)');
+                const title = row.querySelector('td:nth-child(2)');
+                const description = row.querySelector('td:nth-child(5)');
+                
+                // Apply highlights to filename
+                if (filename && filename.textContent.toLowerCase().includes(searchQuery)) {
+                    const text = filename.textContent;
+                    const regExp = new RegExp(searchQuery, 'gi');
+                    filename.innerHTML = `<small class="text-muted">${text.replace(regExp, match => `<mark>${match}</mark>`)}</small>`;
+                }
+                
+                // Apply highlights to title
+                if (title && title.textContent.toLowerCase().includes(searchQuery)) {
+                    const text = title.textContent;
+                    const regExp = new RegExp(searchQuery, 'gi');
+                    title.innerHTML = text.replace(regExp, match => `<mark>${match}</mark>`);
+                }
+                
+                // Apply highlights to description
+                if (description && description.textContent.toLowerCase().includes(searchQuery)) {
+                    const text = description.textContent;
+                    const regExp = new RegExp(searchQuery, 'gi');
+                    description.innerHTML = text.replace(regExp, match => `<mark>${match}</mark>`);
                 }
             });
         }
+        {% endif %}
     });
 </script>
 {% endblock %}
