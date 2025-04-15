@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Flex:wght@400;700&display=swap">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
         .bg-primary-dark {
             background-color: #3949ab; /* Deep indigo color */
@@ -51,7 +52,7 @@
                     <!-- Debug: Current role: {{ session.get('user_role') }} -->
                     {% if session.get('user_role') and session.get('user_role').lower() == 'admin' %}
                     <li class="nav-item">
-                        <a class="nav-link text-white" href="">
+                        <a class="nav-link text-white" href="/admin">
                             <i class="fas fa-cogs"></i> Admin
                         </a>
                     </li>
@@ -59,44 +60,10 @@
                 </ul>
                 
                 <!-- Quick Access Tools -->
-                <div class="mt-4 mb-3">
-                    <h6 class="text-uppercase text-light font-weight-bold pl-2">Quick Access</h6>
-                    <div class="d-flex flex-wrap mt-2">
-                        <a href="/new-course" class="quick-tool-btn m-1" title="Create New Course">
-                            <i class="fas fa-book"></i>
-                        </a>
-                        <a href="/messages" class="quick-tool-btn m-1" title="Messages">
-                            <i class="fas fa-envelope"></i>
-                        </a>
-                        <a href="/tasks" class="quick-tool-btn m-1" title="Tasks">
-                            <i class="fas fa-tasks"></i>
-                        </a>
-                        <a href="/notes" class="quick-tool-btn m-1" title="Notes">
-                            <i class="fas fa-sticky-note"></i>
-                        </a>
-                    </div>
-                </div>
+               
                 
                 <!-- Collapsible Resources Section -->
-                <div class="mt-3">
-                    <p class="collapsible-header" data-toggle="collapse" data-target="#resourcesCollapse">
-                        <i class="fas fa-folder mr-2"></i> Resources
-                        <i class="fas fa-chevron-down float-right mt-1"></i>
-                    </p>
-                    <div class="collapse" id="resourcesCollapse">
-                        <div class="pl-3 small">
-                            <a href="/resources/documents" class="d-block mb-2 text-light">
-                                <i class="fas fa-file-alt mr-2"></i> Documents
-                            </a>
-                            <a href="/resources/links" class="d-block mb-2 text-light">
-                                <i class="fas fa-link mr-2"></i> Useful Links
-                            </a>
-                            <a href="/resources/templates" class="d-block mb-2 text-light">
-                                <i class="fas fa-file-code mr-2"></i> Templates
-                            </a>
-                        </div>
-                    </div>
-                </div>
+                
             </div>
             <!-- Main content -->
             <div class="col-md-10 position-relative">
